@@ -1,8 +1,7 @@
 class_name DungeonGenerator
-extends Node
+extends Node2D
 
 signal room_entered(room_data: RoomData)
-signal room_generated(room_data: RoomData)
 
 const ROOM_SCENE := preload("res://scenes/rooms/generated_room.tscn")
 
@@ -11,13 +10,6 @@ var rooms: Dictionary = {}  # Vector2i -> RoomData
 var room_instances: Dictionary = {}  # Vector2i -> Node2D
 var current_room_pos: Vector2i = Vector2i.ZERO
 var max_depth: int = 8
-
-@onready var room_container: Node2D
-
-func _ready() -> void:
-	room_container = Node2D.new()
-	room_container.name = "RoomContainer"
-	add_child(room_container)
 
 func generate_dungeon() -> void:
 	rooms.clear()
@@ -55,7 +47,6 @@ func generate_dungeon() -> void:
 		if direction not in rooms[current_pos].doors:
 			rooms[current_pos].doors.append(direction)
 
-		room_generated.emit(new_room)
 		current_pos = next_pos
 
 	# Generate some side rooms
@@ -92,8 +83,6 @@ func get_current_room() -> RoomData:
 	return rooms.get(current_room_pos)
 
 func get_room_instance(grid_pos: Vector2i) -> Node2D:
-	if not room_instances.has(grid_pos):
-		_instantiate_room(grid_pos)
 	return room_instances.get(grid_pos)
 
 func _instantiate_room(grid_pos: Vector2i) -> void:
@@ -105,7 +94,8 @@ func _instantiate_room(grid_pos: Vector2i) -> void:
 	var room_data: RoomData = rooms[grid_pos]
 	var room_instance: Node2D = ROOM_SCENE.instantiate()
 	room_instance.setup(room_data, self)
-	room_container.call_deferred("add_child", room_instance)
+	room_instance.z_index = -1  # Render behind player
+	add_child(room_instance)
 	room_instances[grid_pos] = room_instance
 
 func _update_visible_rooms() -> void:

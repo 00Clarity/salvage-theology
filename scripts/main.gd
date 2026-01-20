@@ -20,14 +20,17 @@ func _on_room_entered(room_data: RoomData) -> void:
 	# Update HUD depth
 	hud.update_depth(room_data.depth)
 
-	# Connect door signals for current room
-	var room_instance = dungeon_generator.get_room_instance(room_data.grid_position)
-	if room_instance and room_instance != current_room_instance:
-		if current_room_instance and current_room_instance.door_entered.is_connected(_on_door_entered):
+	# Disconnect old room signals
+	if current_room_instance and is_instance_valid(current_room_instance):
+		if current_room_instance.door_entered.is_connected(_on_door_entered):
 			current_room_instance.door_entered.disconnect(_on_door_entered)
 
+	# Connect new room signals
+	var room_instance = dungeon_generator.get_room_instance(room_data.grid_position)
+	if room_instance:
 		current_room_instance = room_instance
-		room_instance.door_entered.connect(_on_door_entered)
+		if not room_instance.door_entered.is_connected(_on_door_entered):
+			room_instance.door_entered.connect(_on_door_entered)
 
 func _on_door_entered(direction: RoomData.DoorDirection) -> void:
 	if not dungeon_generator.has_adjacent_room(direction):

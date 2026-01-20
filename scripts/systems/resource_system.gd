@@ -11,7 +11,11 @@ signal resource_depleted(resource_name: String)
 var is_draining: bool = true
 
 func _ready() -> void:
-	emit_signal("resource_changed", "oxygen", oxygen, max_oxygen)
+	# Defer to ensure listeners are ready
+	call_deferred("_emit_initial_state")
+
+func _emit_initial_state() -> void:
+	resource_changed.emit("oxygen", oxygen, max_oxygen)
 
 func _process(delta: float) -> void:
 	if is_draining:
@@ -23,14 +27,14 @@ func drain_oxygen(delta: float) -> void:
 	oxygen = max(oxygen, 0.0)
 
 	if oxygen != previous_oxygen:
-		emit_signal("resource_changed", "oxygen", oxygen, max_oxygen)
+		resource_changed.emit("oxygen", oxygen, max_oxygen)
 
 	if oxygen <= 0.0 and previous_oxygen > 0.0:
-		emit_signal("resource_depleted", "oxygen")
+		resource_depleted.emit("oxygen")
 
 func restore_oxygen(amount: float) -> void:
 	oxygen = min(oxygen + amount, max_oxygen)
-	emit_signal("resource_changed", "oxygen", oxygen, max_oxygen)
+	resource_changed.emit("oxygen", oxygen, max_oxygen)
 
 func set_draining(enabled: bool) -> void:
 	is_draining = enabled
@@ -38,7 +42,7 @@ func set_draining(enabled: bool) -> void:
 func reset() -> void:
 	oxygen = max_oxygen
 	is_draining = true
-	emit_signal("resource_changed", "oxygen", oxygen, max_oxygen)
+	resource_changed.emit("oxygen", oxygen, max_oxygen)
 
 func get_oxygen_percent() -> float:
 	return oxygen / max_oxygen

@@ -15,8 +15,8 @@ func generate_room(depth: int, required_doors: Array[RoomData.DoorDirection] = [
 	room.height = randi_range(MIN_HEIGHT, MAX_HEIGHT + size_bonus)
 	room.depth = depth
 
-	# Determine room type based on depth
-	room.room_type = _get_room_type(depth)
+	# Use the proper depth-based room type distribution from RoomData
+	room.room_type = RoomData.roll_room_type(depth)
 
 	# Add required doors first
 	for dir in required_doors:
@@ -33,23 +33,10 @@ func generate_room(depth: int, required_doors: Array[RoomData.DoorDirection] = [
 	]
 
 	while room.doors.size() < target_doors:
-		var remaining := available_directions.filter(func(d): return d not in room.doors)
+		var remaining = available_directions.filter(func(d): return d not in room.doors)
 		if remaining.is_empty():
 			break
 		var dir: RoomData.DoorDirection = remaining[randi() % remaining.size()]
 		room.doors.append(dir)
 
 	return room
-
-func _get_room_type(depth: int) -> RoomData.RoomType:
-	var roll := randf()
-
-	# Deeper = more special rooms
-	if depth >= 5 and roll < 0.15:
-		return RoomData.RoomType.SHRINE
-	elif depth >= 3 and roll < 0.25:
-		return RoomData.RoomType.HAZARD
-	elif roll < 0.4:
-		return RoomData.RoomType.CHAMBER
-	else:
-		return RoomData.RoomType.PASSAGE

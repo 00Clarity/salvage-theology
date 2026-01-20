@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://bpaymentmenu01"]
+
+[ext_resource type="Script" path="res://scripts/ui/payment_menu.gd" id="1_payment"]
+
+[node name="PaymentMenu" type="CanvasLayer"]
+layer = 10
+script = ExtResource("1_payment")

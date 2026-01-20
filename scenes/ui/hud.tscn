@@ -32,14 +32,53 @@ max_value = 100.0
 value = 100.0
 show_percentage = false
 
+[node name="HealthContainer" type="VBoxContainer" parent="."]
+offset_left = 20.0
+offset_top = 75.0
+offset_right = 220.0
+offset_bottom = 120.0
+
+[node name="HealthLabel" type="Label" parent="HealthContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
+theme_override_font_sizes/font_size = 14
+text = "HP: 100%"
+
+[node name="HealthBar" type="ProgressBar" parent="HealthContainer"]
+custom_minimum_size = Vector2(200, 16)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_bg")
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
 [node name="DepthLabel" type="Label" parent="."]
 offset_left = 20.0
-offset_top = 80.0
+offset_top = 130.0
 offset_right = 220.0
-offset_bottom = 100.0
+offset_bottom = 150.0
 theme_override_colors/font_color = Color(0, 1, 1, 0.8)
 theme_override_font_sizes/font_size = 16
 text = "DEPTH: 1"
+
+[node name="InventoryLabel" type="Label" parent="."]
+offset_left = 20.0
+offset_top = 155.0
+offset_right = 220.0
+offset_bottom = 175.0
+theme_override_colors/font_color = Color(1, 0.84, 0, 0.8)
+theme_override_font_sizes/font_size = 14
+text = "ITEMS: 2"
+
+[node name="ThresholdIndicator" type="Label" parent="."]
+visible = false
+offset_left = 20.0
+offset_top = 180.0
+offset_right = 220.0
+offset_bottom = 200.0
+theme_override_colors/font_color = Color(0.5, 1, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "[ SANCTUARY ]"
 
 [node name="DeathPanel" type="Panel" parent="."]
 visible = false

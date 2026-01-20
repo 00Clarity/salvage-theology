@@ -13,13 +13,18 @@ const TILE_SIZE := 32
 
 var room_data: RoomData
 var dungeon_generator: DungeonGenerator
-var doors: Dictionary = {}  # DoorDirection -> Area2D
+var doors: Dictionary = {}  # DoorDirection -> TheologyDoor
+var room_id: String = ""
 
 signal door_entered(direction: RoomData.DoorDirection)
+signal door_payment_requested(door: TheologyDoor)
+signal player_entered_threshold(door: TheologyDoor)
+signal player_exited_threshold(door: TheologyDoor)
 
 func setup(data: RoomData, generator: DungeonGenerator) -> void:
 	room_data = data
 	dungeon_generator = generator
+	room_id = "room_%d_%d" % [room_data.grid_position.x, room_data.grid_position.y]
 	_generate_room()
 
 func _generate_room() -> void:
@@ -244,74 +249,42 @@ func _create_doors() -> void:
 
 		_create_door(direction, door_pos, door_size, is_vertical)
 
-func _create_door(direction: RoomData.DoorDirection, pos: Vector2, size: Vector2, is_vertical: bool) -> void:
-	var door_container := Node2D.new()
-	door_container.position = pos
+func _create_door(direction: RoomData.DoorDirection, pos: Vector2, size: Vector2, _is_vertical: bool) -> void:
+	# Create TheologyDoor with payment system
+	var door := TheologyDoor.new()
+	door.room_id = room_id
+	door.setup(direction, pos, size)
 
-	# Door threshold glow
-	var threshold := Polygon2D.new()
-	threshold.polygon = PackedVector2Array([
-		Vector2(-size.x / 2, -size.y / 2),
-		Vector2(size.x / 2, -size.y / 2),
-		Vector2(size.x / 2, size.y / 2),
-		Vector2(-size.x / 2, size.y / 2)
-	])
-	threshold.color = Color(CALYX_CYAN, 0.15)
-	threshold.z_index = -8
-	door_container.add_child(threshold)
+	# Check if door was previously opened (permanence rule)
+	if GameManager.is_door_open(room_id, door.door_id):
+		door.state = TheologyDoor.DoorState.OPEN
 
-	# Door frame
-	var frame := Line2D.new()
-	frame.points = PackedVector2Array([
-		Vector2(-size.x / 2, -size.y / 2),
-		Vector2(size.x / 2, -size.y / 2),
-		Vector2(size.x / 2, size.y / 2),
-		Vector2(-size.x / 2, size.y / 2),
-		Vector2(-size.x / 2, -size.y / 2)
-	])
-	frame.width = 3.0
-	frame.default_color = CALYX_CYAN
-	frame.z_index = -2
-	door_container.add_child(frame)
+	# Connect signals
+	door.door_opened.connect(_on_theology_door_opened.bind(direction))
+	door.payment_requested.connect(_on_door_payment_requested)
+	door.player_entered_threshold.connect(_on_player_entered_threshold)
+	door.player_exited_threshold.connect(_on_player_exited_threshold)
 
-	# Glowing point light at door
-	var light := PointLight2D.new()
-	light.color = CALYX_CYAN
-	light.energy = 0.4
-	light.texture_scale = 0.5
-	# Create a simple gradient texture for the light
-	var gradient := GradientTexture2D.new()
-	gradient.width = 128
-	gradient.height = 128
-	gradient.fill = GradientTexture2D.FILL_RADIAL
-	gradient.fill_from = Vector2(0.5, 0.5)
-	gradient.fill_to = Vector2(0.5, 0.0)
-	var grad := Gradient.new()
-	grad.colors = PackedColorArray([Color.WHITE, Color.TRANSPARENT])
-	gradient.gradient = grad
-	light.texture = gradient
-	door_container.add_child(light)
+	add_child(door)
+	doors[direction] = door
 
-	add_child(door_container)
+func _on_theology_door_opened(_door: TheologyDoor, direction: RoomData.DoorDirection) -> void:
+	door_entered.emit(direction)
 
-	# Collision area for door detection
-	var area := Area2D.new()
-	area.position = pos
-	area.set_meta("direction", direction)
+func _on_door_payment_requested(door: TheologyDoor) -> void:
+	door_payment_requested.emit(door)
 
-	var shape := CollisionShape2D.new()
-	var rect := RectangleShape2D.new()
-	rect.size = size
-	shape.shape = rect
-	area.add_child(shape)
+func _on_player_entered_threshold(door: TheologyDoor) -> void:
+	player_entered_threshold.emit(door)
+	var player = get_tree().get_first_node_in_group("player")
+	if player and player.has_method("enter_threshold"):
+		player.enter_threshold()
 
-	area.body_entered.connect(_on_door_body_entered.bind(direction))
-	add_child(area)
-	doors[direction] = area
-
-func _on_door_body_entered(body: Node2D, direction: RoomData.DoorDirection) -> void:
-	if body.is_in_group("player"):
-		door_entered.emit(direction)
+func _on_player_exited_threshold(door: TheologyDoor) -> void:
+	player_exited_threshold.emit(door)
+	var player = get_tree().get_first_node_in_group("player")
+	if player and player.has_method("exit_threshold"):
+		player.exit_threshold()
 
 func _create_collision() -> void:
 	var half_w := room_data.width * TILE_SIZE / 2.0

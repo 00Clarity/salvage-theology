@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://bqj7w3xpmh8gf"]
+
+[ext_resource type="Script" path="res://scripts/systems/divine_material.gd" id="1_mat"]
+
+[node name="DivineMaterial" type="Area2D"]
+collision_layer = 4
+collision_mask = 1
+script = ExtResource("1_mat")

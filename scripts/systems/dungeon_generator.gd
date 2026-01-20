@@ -1,6 +1,9 @@
 class_name DungeonGenerator
 extends Node2D
 
+## DungeonGenerator: Procedurally generates dungeon layout and manages room transitions
+## Handles room creation, navigation, and state persistence
+
 signal room_entered(room_data: RoomData)
 
 const ROOM_SCENE := preload("res://scenes/rooms/generated_room.tscn")
@@ -15,15 +18,31 @@ func generate_dungeon() -> void:
 	rooms.clear()
 	_clear_room_instances()
 
+	if not room_generator:
+		push_error("[DungeonGenerator] generate_dungeon: RoomGenerator is null")
+		return
+
 	# Generate starting room at origin
 	var start_room := room_generator.generate_room(1)
+	if not start_room:
+		push_error("[DungeonGenerator] generate_dungeon: Failed to generate starting room")
+		return
 	start_room.grid_position = Vector2i.ZERO
+	# Starting room always has at least 2 doors
+	if start_room.doors.size() < 2:
+		var available = [RoomData.DoorDirection.NORTH, RoomData.DoorDirection.SOUTH,
+						 RoomData.DoorDirection.EAST, RoomData.DoorDirection.WEST]
+		for dir in available:
+			if dir not in start_room.doors:
+				start_room.doors.append(dir)
+				if start_room.doors.size() >= 2:
+					break
 	rooms[Vector2i.ZERO] = start_room
 
 	# Generate path to max depth
 	var current_pos := Vector2i.ZERO
 	for depth in range(2, max_depth + 1):
-		var direction := _get_random_direction()
+		var direction = _get_random_direction()
 		var next_pos := current_pos + RoomData.direction_to_vector(direction)
 
 		# Avoid overwriting existing rooms
@@ -53,7 +72,7 @@ func generate_dungeon() -> void:
 	_generate_side_rooms()
 
 func _generate_side_rooms() -> void:
-	var main_path := rooms.keys()
+	var main_path = rooms.keys().duplicate()
 	for pos in main_path:
 		if randf() < 0.3:  # 30% chance for side room
 			var room_data: RoomData = rooms[pos]
@@ -73,11 +92,17 @@ func _generate_side_rooms() -> void:
 
 func enter_room(grid_pos: Vector2i) -> void:
 	if not rooms.has(grid_pos):
+		push_warning("[DungeonGenerator] enter_room: No room at position %s" % grid_pos)
+		return
+
+	var room_data: RoomData = rooms[grid_pos]
+	if not room_data:
+		push_error("[DungeonGenerator] enter_room: Room data is null at position %s" % grid_pos)
 		return
 
 	current_room_pos = grid_pos
-	_update_visible_rooms()
-	room_entered.emit(rooms[grid_pos])
+	_show_current_room()
+	room_entered.emit(room_data)
 
 func get_current_room() -> RoomData:
 	return rooms.get(current_room_pos)
@@ -85,42 +110,61 @@ func get_current_room() -> RoomData:
 func get_room_instance(grid_pos: Vector2i) -> Node2D:
 	return room_instances.get(grid_pos)
 
-func _instantiate_room(grid_pos: Vector2i) -> void:
-	if not rooms.has(grid_pos):
-		return
-	if room_instances.has(grid_pos):
+func _show_current_room() -> void:
+	# Ensure current room is instantiated
+	if not room_instances.has(current_room_pos):
+		_instantiate_room(current_room_pos)
+
+	# Verify room was instantiated
+	if not room_instances.has(current_room_pos):
+		push_error("[DungeonGenerator] _show_current_room: Failed to instantiate room at %s" % current_room_pos)
 		return
 
+	# Hide all rooms except current
+	for pos in room_instances.keys():
+		var instance: Node2D = room_instances[pos]
+		if not is_instance_valid(instance):
+			push_warning("[DungeonGenerator] _show_current_room: Invalid room instance at %s" % pos)
+			continue
+		instance.visible = (pos == current_room_pos)
+
+func _instantiate_room(grid_pos: Vector2i) -> void:
+	if not rooms.has(grid_pos):
+		push_warning("[DungeonGenerator] _instantiate_room: No room data at position %s" % grid_pos)
+		return
+	if room_instances.has(grid_pos):
+		return  # Already instantiated, not an error
+
 	var room_data: RoomData = rooms[grid_pos]
+	if not room_data:
+		push_error("[DungeonGenerator] _instantiate_room: Room data is null at position %s" % grid_pos)
+		return
+
+	if not ROOM_SCENE:
+		push_error("[DungeonGenerator] _instantiate_room: ROOM_SCENE not loaded")
+		return
+
 	var room_instance: Node2D = ROOM_SCENE.instantiate()
-	room_instance.setup(room_data, self)
+	if not room_instance:
+		push_error("[DungeonGenerator] _instantiate_room: Failed to instantiate room scene")
+		return
+
+	if room_instance.has_method("setup"):
+		room_instance.setup(room_data, self)
+	else:
+		push_error("[DungeonGenerator] _instantiate_room: Room instance missing setup method")
+		room_instance.queue_free()
+		return
+
 	room_instance.z_index = -1  # Render behind player
+	room_instance.position = Vector2.ZERO  # All rooms at origin
 	add_child(room_instance)
 	room_instances[grid_pos] = room_instance
 
-func _update_visible_rooms() -> void:
-	# Load current room and adjacent rooms
-	var to_load: Array[Vector2i] = [current_room_pos]
-	for dir in [RoomData.DoorDirection.NORTH, RoomData.DoorDirection.SOUTH,
-				RoomData.DoorDirection.EAST, RoomData.DoorDirection.WEST]:
-		var adjacent := current_room_pos + RoomData.direction_to_vector(dir)
-		if rooms.has(adjacent):
-			to_load.append(adjacent)
-
-	# Instantiate needed rooms
-	for pos in to_load:
-		if not room_instances.has(pos):
-			_instantiate_room(pos)
-
-	# Hide distant rooms (more than 1 step away)
-	for pos in room_instances.keys():
-		var instance: Node2D = room_instances[pos]
-		var distance = abs(pos.x - current_room_pos.x) + abs(pos.y - current_room_pos.y)
-		instance.visible = distance <= 1
-
 func _clear_room_instances() -> void:
 	for instance in room_instances.values():
-		instance.queue_free()
+		if is_instance_valid(instance):
+			instance.queue_free()
 	room_instances.clear()
 
 func _get_random_direction() -> RoomData.DoorDirection:
@@ -138,3 +182,14 @@ func get_adjacent_room_position(direction: RoomData.DoorDirection) -> Vector2i:
 func has_adjacent_room(direction: RoomData.DoorDirection) -> bool:
 	var adjacent := get_adjacent_room_position(direction)
 	return rooms.has(adjacent)
+
+func get_door_entry_position(from_direction: RoomData.DoorDirection) -> Vector2:
+	# Player enters from this direction, position them just inside the room
+	var room_data = get_current_room()
+	if not room_data:
+		return Vector2.ZERO
+
+	var door_pos = room_data.get_door_world_position(from_direction)
+	# Offset player into the room (away from the door)
+	var inward = RoomData.direction_to_vector(RoomData.opposite_direction(from_direction))
+	return door_pos + Vector2(inward) * 48.0

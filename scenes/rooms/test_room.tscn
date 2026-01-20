@@ -1,0 +1,104 @@
+[gd_scene load_steps=3 format=3 uid="uid://b5mx7qk4kp3gh"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_h"]
+size = Vector2(640, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_v"]
+size = Vector2(20, 400)
+
+[node name="TestRoom" type="Node2D"]
+
+[node name="Floor" type="Polygon2D" parent="."]
+color = Color(0.039, 0.102, 0.102, 1)
+polygon = PackedVector2Array(-300, -180, 300, -180, 300, 180, -300, 180)
+
+[node name="Walls" type="Node2D" parent="."]
+
+[node name="WallTop" type="StaticBody2D" parent="Walls"]
+position = Vector2(0, -190)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/WallTop"]
+shape = SubResource("RectangleShape2D_wall_h")
+
+[node name="Visual" type="Polygon2D" parent="Walls/WallTop"]
+color = Color(0.039, 0.165, 0.165, 1)
+polygon = PackedVector2Array(-320, -10, 320, -10, 320, 10, -320, 10)
+
+[node name="Accent" type="Line2D" parent="Walls/WallTop"]
+points = PackedVector2Array(-320, 10, 320, 10)
+width = 2.0
+default_color = Color(0, 1, 1, 0.5)
+
+[node name="WallBottom" type="StaticBody2D" parent="Walls"]
+position = Vector2(0, 190)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/WallBottom"]
+shape = SubResource("RectangleShape2D_wall_h")
+
+[node name="Visual" type="Polygon2D" parent="Walls/WallBottom"]
+color = Color(0.039, 0.165, 0.165, 1)
+polygon = PackedVector2Array(-320, -10, 320, -10, 320, 10, -320, 10)
+
+[node name="Accent" type="Line2D" parent="Walls/WallBottom"]
+points = PackedVector2Array(-320, -10, 320, -10)
+width = 2.0
+default_color = Color(0, 1, 1, 0.5)
+
+[node name="WallLeft" type="StaticBody2D" parent="Walls"]
+position = Vector2(-310, 0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/WallLeft"]
+shape = SubResource("RectangleShape2D_wall_v")
+
+[node name="Visual" type="Polygon2D" parent="Walls/WallLeft"]
+color = Color(0.039, 0.165, 0.165, 1)
+polygon = PackedVector2Array(-10, -200, 10, -200, 10, 200, -10, 200)
+
+[node name="Accent" type="Line2D" parent="Walls/WallLeft"]
+points = PackedVector2Array(10, -200, 10, 200)
+width = 2.0
+default_color = Color(0, 1, 1, 0.5)
+
+[node name="WallRight" type="StaticBody2D" parent="Walls"]
+position = Vector2(310, 0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/WallRight"]
+shape = SubResource("RectangleShape2D_wall_v")
+
+[node name="Visual" type="Polygon2D" parent="Walls/WallRight"]
+color = Color(0.039, 0.165, 0.165, 1)
+polygon = PackedVector2Array(-10, -200, 10, -200, 10, 200, -10, 200)
+
+[node name="Accent" type="Line2D" parent="Walls/WallRight"]
+points = PackedVector2Array(-10, -200, -10, 200)
+width = 2.0
+default_color = Color(0, 1, 1, 0.5)
+
+[node name="Decorations" type="Node2D" parent="."]
+
+[node name="CornerTL" type="Polygon2D" parent="Decorations"]
+position = Vector2(-280, -160)
+color = Color(0, 1, 1, 0.3)
+polygon = PackedVector2Array(0, 0, 20, 0, 20, 5, 5, 5, 5, 20, 0, 20)
+
+[node name="CornerTR" type="Polygon2D" parent="Decorations"]
+position = Vector2(280, -160)
+color = Color(0, 1, 1, 0.3)
+polygon = PackedVector2Array(0, 0, -20, 0, -20, 5, -5, 5, -5, 20, 0, 20)
+
+[node name="CornerBL" type="Polygon2D" parent="Decorations"]
+position = Vector2(-280, 160)
+color = Color(0, 1, 1, 0.3)
+polygon = PackedVector2Array(0, 0, 20, 0, 20, -5, 5, -5, 5, -20, 0, -20)
+
+[node name="CornerBR" type="Polygon2D" parent="Decorations"]
+position = Vector2(280, 160)
+color = Color(0, 1, 1, 0.3)
+polygon = PackedVector2Array(0, 0, -20, 0, -20, -5, -5, -5, -5, -20, 0, -20)
+
+[node name="CenterMarker" type="Node2D" parent="Decorations"]
+
+[node name="Ring" type="Line2D" parent="Decorations/CenterMarker"]
+points = PackedVector2Array(30, 0, 27.7164, 11.4805, 21.2132, 21.2132, 11.4805, 27.7164, 0, 30, -11.4805, 27.7164, -21.2132, 21.2132, -27.7164, 11.4805, -30, 0, -27.7164, -11.4805, -21.2132, -21.2132, -11.4805, -27.7164, 0, -30, 11.4805, -27.7164, 21.2132, -21.2132, 27.7164, -11.4805, 30, 0)
+width = 1.0
+default_color = Color(0, 0.878431, 0.815686, 0.2)

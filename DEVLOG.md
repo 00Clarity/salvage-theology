@@ -8,29 +8,43 @@ Track what's built, decisions made, and what remains. Update after each session.
 
 ## Current Status
 
-**Phase:** Not started
-**Playable:** No
-**Last Updated:** —
+**Phase:** Phase 1 (Core Foundation) - Complete
+**Playable:** Yes (basic movement in test room)
+**Last Updated:** 2026-01-20
 
 ---
 
 ## Session Log
 
-### Session 1: [DATE]
+### Session 1: 2026-01-20
 
 **Completed:**
-- [ ] Initial setup
+- [x] Project structure created (scenes/, scripts/, resources/, shaders/, assets/)
+- [x] project.godot configured (Godot 4.2, GL Compatibility, input mapping)
+- [x] Color resources created with Calyx palette (cyan/teal/white)
+- [x] Player character built from Polygon2D nodes:
+  - Dark suit body (#0a0f1a)
+  - Glowing cyan visor
+  - Accent lines on torso, arms, legs
+  - PointLight2D for visor glow
+  - Subtle breathing and visor pulse animations
+- [x] Player movement (WASD/Arrows, 200 units/sec)
+- [x] Test room with collision walls and Calyx-themed decorations
+- [x] Main scene combining room and player
 
 **Decisions:**
-- (none yet)
+- Used Polygon2D construction as specified in CHARACTERS.md
+- Player character origin at feet (y=0), body extends upward to y=-60
+- Collision shape is 12-unit radius circle centered on player body
+- Camera zoom at 2x for better visibility
+- Room has cyan accent lines on walls matching Calyx aesthetic
 
 **Issues:**
-- (none yet)
+- None
 
 **Next:**
-- Read all design docs
-- Set up Godot project
-- Begin Phase 1
+- Test in Godot editor to verify rendering
+- Begin Phase 2: Resources & HUD (oxygen system)
 
 ---
 
@@ -38,7 +52,7 @@ Track what's built, decisions made, and what remains. Update after each session.
 
 | Phase | Status | Notes |
 |-------|--------|-------|
-| 1. Core Foundation | Not started | Player movement |
+| 1. Core Foundation | Complete | Player polygon body, movement, test room |
 | 2. Resources & HUD | Not started | Oxygen, death |
 | 3. Room Generation | Not started | Procedural layout |
 | 4. Calyx Theology | Not started | Door payments |

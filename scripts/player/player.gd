@@ -5,26 +5,56 @@ signal health_sacrificed(amount: float)
 signal memory_sacrificed(memory_name: String)
 signal entered_threshold
 signal exited_threshold
+signal enemy_killed
+signal material_collected(material: Node2D)
 
 @export var move_speed: float = 200.0
 @export var max_health: float = 100.0
+@export var attack_damage: float = 20.0
+@export var attack_range: float = 45.0
+@export var attack_cooldown: float = 0.4
 
 var health: float = 100.0
 var facing_direction: Vector2 = Vector2.DOWN
 var is_dead: bool = false
 var in_threshold: bool = false
+var can_attack: bool = true
+var is_attacking: bool = false
+var invincible: bool = false
 
-# Inventory system (simplified for Phase 4)
+# Inventory system
 var inventory: Array[String] = ["Scrap Metal", "Faded Cloth"]
 var memories: Array[String] = []
 
+# Combat stats
+var enemies_killed: int = 0
+
+# Divine material collection
+var divine_material_value: int = 0
+var corruption_level: float = 0.0
+const CORRUPTION_PER_VALUE := 0.002  # 0.2% corruption per value point
+
 @onready var body: Node2D = $Body
+
+# Attack visual
+var attack_arc: Line2D
 
 func _ready() -> void:
 	add_to_group("player")
-	health = max_health
 	GameManager.register_player(self)
+	GameManager.apply_upgrades_to_player(self)
+	health = max_health
 	GameManager.game_over.connect(_on_game_over)
+	_create_attack_visual()
+
+func _create_attack_visual() -> void:
+	attack_arc = Line2D.new()
+	attack_arc.name = "AttackArc"
+	attack_arc.width = 4.0
+	attack_arc.default_color = Color("#00ffff", 0.8)
+	attack_arc.visible = false
+	attack_arc.z_index = 10
+	add_child(attack_arc)
 
 func _physics_process(_delta: float) -> void:
 	if is_dead:
@@ -40,6 +70,64 @@ func _physics_process(_delta: float) -> void:
 
 	velocity = input * move_speed
 	move_and_slide()
+
+func _input(event: InputEvent) -> void:
+	if is_dead:
+		return
+
+	if event.is_action_pressed("attack") and can_attack:
+		perform_attack()
+
+func perform_attack() -> void:
+	if not can_attack or is_attacking or in_threshold:
+		return
+
+	is_attacking = true
+	can_attack = false
+
+	# Show attack visual
+	_show_attack_arc()
+
+	# Find enemies in range
+	var enemies := get_tree().get_nodes_in_group("echo")
+	for enemy in enemies:
+		if not is_instance_valid(enemy):
+			continue
+		var distance := global_position.distance_to(enemy.global_position)
+		if distance < attack_range:
+			# Check if enemy is in front of player
+			var to_enemy := (enemy.global_position - global_position).normalized()
+			var dot := facing_direction.dot(to_enemy)
+			if dot > 0.3:  # Roughly 70 degree cone
+				if enemy.has_method("take_damage"):
+					enemy.take_damage(attack_damage)
+					if enemy.health <= 0:
+						enemies_killed += 1
+						enemy_killed.emit()
+
+	# Cooldown
+	await get_tree().create_timer(attack_cooldown).timeout
+	can_attack = true
+	is_attacking = false
+
+func _show_attack_arc() -> void:
+	# Create arc in facing direction
+	var points := PackedVector2Array()
+	var base_angle := facing_direction.angle()
+	var arc_range := PI / 2.5  # ~70 degrees
+
+	for i in range(9):
+		var t := float(i) / 8.0
+		var angle := base_angle - arc_range / 2 + arc_range * t
+		points.append(Vector2(cos(angle), sin(angle)) * attack_range)
+
+	attack_arc.points = points
+	attack_arc.visible = true
+
+	# Fade out
+	var tween := create_tween()
+	tween.tween_property(attack_arc, "modulate:a", 0.0, 0.15)
+	tween.tween_callback(func(): attack_arc.visible = false; attack_arc.modulate.a = 1.0)
 
 # Inventory methods
 func has_items() -> bool:
@@ -84,11 +172,16 @@ func take_damage(amount: float) -> void:
 		_show_protection_effect()
 		return
 
-	if is_dead:
+	if is_dead or invincible:
 		return
 
 	health -= amount
 	_flash_damage()
+
+	# Brief invincibility
+	invincible = true
+	await get_tree().create_timer(0.5).timeout
+	invincible = false
 
 	if health <= 0:
 		die()
@@ -132,10 +225,51 @@ func die() -> void:
 func _on_game_over() -> void:
 	die()
 
+# Divine material collection
+func collect_material(material: Node2D) -> void:
+	if not material or not is_instance_valid(material):
+		return
+
+	var value: int = material.value if material.has_method("get") else 10
+	divine_material_value += value
+
+	# Increase corruption based on material value
+	corruption_level += value * CORRUPTION_PER_VALUE
+	corruption_level = minf(corruption_level, 1.0)  # Cap at 100%
+
+	_apply_corruption_effects()
+	material_collected.emit(material)
+	GameManager.record_material_collected(value)
+
+func _apply_corruption_effects() -> void:
+	# Visual corruption - subtle tint toward divine color
+	var corruption_color := Color(0.5, 1.0, 1.0, 1.0)  # Cyan tint
+	var base_color := Color.WHITE
+	body.modulate = base_color.lerp(corruption_color, corruption_level * 0.5)
+
+	# Corruption affects stats
+	# Higher corruption = slower movement but stronger attacks
+	move_speed = 200.0 * (1.0 - corruption_level * 0.2)  # Up to 20% slower
+	attack_damage = 20.0 * (1.0 + corruption_level * 0.5)  # Up to 50% stronger
+
+func get_corruption_level() -> float:
+	return corruption_level
+
+func get_material_value() -> int:
+	return divine_material_value
+
 func reset() -> void:
 	is_dead = false
 	health = max_health
 	in_threshold = false
+	invincible = false
+	can_attack = true
+	is_attacking = false
+	enemies_killed = 0
+	divine_material_value = 0
+	corruption_level = 0.0
+	move_speed = 200.0
+	attack_damage = 20.0
 	body.modulate = Color.WHITE
 	body.scale = Vector2.ONE
 	inventory = ["Scrap Metal", "Faded Cloth"]

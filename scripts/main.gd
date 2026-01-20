@@ -1,6 +1,7 @@
 extends Node2D
 
 const PaymentMenuScene := preload("res://scenes/ui/payment_menu.tscn")
+const RunSummaryScene := preload("res://scenes/ui/run_summary.tscn")
 
 @onready var hud = $HUD
 @onready var resource_system = $ResourceSystem
@@ -9,10 +10,12 @@ const PaymentMenuScene := preload("res://scenes/ui/payment_menu.tscn")
 
 var current_room_instance: Node2D
 var payment_menu: PaymentMenu
+var run_summary: RunSummary
 
 func _ready() -> void:
 	dungeon_generator.room_entered.connect(_on_room_entered)
 	_setup_payment_menu()
+	_setup_run_summary()
 	_start_dungeon()
 
 func _setup_payment_menu() -> void:
@@ -20,6 +23,12 @@ func _setup_payment_menu() -> void:
 	payment_menu.payment_selected.connect(_on_payment_made)
 	payment_menu.payment_cancelled.connect(_on_payment_cancelled)
 	add_child(payment_menu)
+
+func _setup_run_summary() -> void:
+	run_summary = RunSummaryScene.instantiate()
+	run_summary.restart_pressed.connect(_on_run_restart)
+	run_summary.continue_pressed.connect(_on_continue_to_station)
+	add_child(run_summary)
 
 func _start_dungeon() -> void:
 	dungeon_generator.generate_dungeon()
@@ -90,4 +99,12 @@ func _on_resource_depleted(resource_name: String) -> void:
 	if resource_name == "oxygen":
 		resource_system.set_draining(false)
 		GameManager.trigger_death()
-		hud.show_death_screen()
+		# Death screen now handled by run_summary
+
+func _on_run_restart() -> void:
+	# Handled by run_summary calling GameManager.restart_game()
+	pass
+
+func _on_continue_to_station() -> void:
+	GameManager.save_game()
+	get_tree().change_scene_to_file("res://scenes/station/station.tscn")

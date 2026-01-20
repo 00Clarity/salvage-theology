@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://seeker001"]
+
+[ext_resource type="Script" path="res://scripts/enemies/echo_seeker.gd" id="1_seeker"]
+
+[node name="EchoSeeker" type="CharacterBody2D"]
+collision_layer = 4
+collision_mask = 3
+script = ExtResource("1_seeker")

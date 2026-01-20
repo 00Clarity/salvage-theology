@@ -15,6 +15,9 @@ var room_data: RoomData
 var dungeon_generator: DungeonGenerator
 var doors: Dictionary = {}  # DoorDirection -> TheologyDoor
 var room_id: String = ""
+var enemies: Array[Node2D] = []
+var materials: Array[Node2D] = []
+var extraction_point: Node2D = null
 
 signal door_entered(direction: RoomData.DoorDirection)
 signal door_payment_requested(door: TheologyDoor)
@@ -34,6 +37,23 @@ func _generate_room() -> void:
 	_create_collision()
 	_add_room_decorations()
 	_add_ambient_light()
+	_spawn_enemies()
+	_spawn_materials()
+	_spawn_extraction_point()
+
+func _spawn_enemies() -> void:
+	enemies = EnemySpawner.spawn_enemies_for_room(self, room_data)
+
+func _spawn_materials() -> void:
+	materials = MaterialSpawner.spawn_materials_for_room(self, room_data)
+
+func _spawn_extraction_point() -> void:
+	# Only spawn extraction point in starting room (depth 1, position 0,0)
+	if room_data.depth == 1 and room_data.grid_position == Vector2i.ZERO:
+		var ExtractionPointScene := preload("res://scenes/systems/extraction_point.tscn")
+		extraction_point = ExtractionPointScene.instantiate()
+		extraction_point.position = Vector2(0, 0)  # Center of room
+		add_child(extraction_point)
 
 func _create_floor() -> void:
 	var half_w := room_data.width * TILE_SIZE / 2.0

@@ -8,8 +8,8 @@ Track what's built, decisions made, and what remains. Update after each session.
 
 ## Current Status
 
-**Phase:** Phase 4 (Calyx Theology) - Complete
-**Playable:** Yes (door payments, sanctuary protection)
+**Phase:** Phase 8 (Station & Meta) - Complete
+**Playable:** Yes (full run loop with extraction and upgrades)
 **Last Updated:** 2026-01-20
 
 ---
@@ -174,6 +174,132 @@ Track what's built, decisions made, and what remains. Update after each session.
 **Next:**
 - Begin Phase 5: Basic Enemy (Watcher)
 
+### Session 6: 2026-01-20
+
+**Completed:**
+- [x] EchoBase enemy class with state machine:
+  - IDLE, PATROL, ALERT, CHASE, STARVING, DEAD states
+  - Configurable stats (health, speed, detection range)
+  - Line of sight detection
+  - Alert other enemies within range
+- [x] EchoWatcher enemy (scout type):
+  - Ring/eye geometric visual design
+  - 2-second detection window before chase
+  - Rotating outer ring animation
+  - Eye tracks player when detected
+- [x] EchoSeeker enemy (attacker type):
+  - Triangle/trail geometric visual
+  - Fast movement with dash ability
+  - Trail effect during chase
+  - Attack damage on collision
+- [x] EnemySpawner system:
+  - Spawns enemies based on room type
+  - Depth-based enemy distribution
+  - No enemies in REST rooms
+- [x] Combat system:
+  - Player attack with directional arc
+  - Attack input (Space, J, Left Click)
+  - 70-degree attack cone
+  - Attack cooldown system
+  - Enemy damage and death
+
+**Decisions:**
+- Watcher alerts other enemies when detecting player
+- Seeker has dash ability for aggressive pursuit
+- Enemies don't spawn in REST rooms (safe zones)
+- Attack requires facing enemy (adds tactical depth)
+
+**Issues:**
+- None
+
+**Next:**
+- Begin Phase 7: Divine Material & Extraction
+
+### Session 7: 2026-01-20
+
+**Completed:**
+- [x] DivineMaterial pickup entity:
+  - 5 grades: COMMON, UNCOMMON, RARE, EPIC, LEGENDARY
+  - Grade-based colors and values
+  - Hexagonal crystal visual with glow
+  - Depth-based grade distribution
+  - Pickup effect animation
+- [x] MaterialSpawner system:
+  - Spawns materials based on room type
+  - VAULT rooms have most materials
+  - Depth increases material count
+- [x] Player material collection:
+  - collect_material() method
+  - Track divine_material_value
+  - Material collected signal
+- [x] Corruption system:
+  - Corruption increases with material collected
+  - Visual tint toward cyan at high corruption
+  - Stat effects: slower movement, stronger attacks
+  - Caps at 100%
+- [x] ExtractionPoint entity:
+  - Diamond shape with upward arrow
+  - Progress ring during extraction
+  - 2-second extraction time
+  - Spawns in starting room (depth 1)
+- [x] RunSummary screen:
+  - Shows material collected, depth, rooms explored
+  - Enemy kills and sacrifices made
+  - Total banked material display
+  - Extraction complete vs Signal Lost states
+  - Continue to Station or New Run buttons
+- [x] HUD updates:
+  - Material value display
+  - Corruption bar with warning colors
+
+**Decisions:**
+- Extraction point in starting room encourages depth exploration
+- Corruption provides risk/reward for collecting more material
+- Run summary appears on both extraction and death
+- Material is only banked on successful extraction
+
+**Issues:**
+- None
+
+**Next:**
+- Begin Phase 8: Station & Meta-progression
+
+### Session 8: 2026-01-20
+
+**Completed:**
+- [x] Station scene (hub between runs):
+  - Dark background with grid pattern
+  - Material display (banked total)
+  - BEGIN DIVE button to start runs
+- [x] Upgrade system with 6 upgrades:
+  - O2 Tank Upgrade: +20% oxygen capacity
+  - Reinforced Suit: +25 max health
+  - Weapon Calibration: +10% attack damage
+  - Servo Motors: +10% move speed
+  - Divine Filter: -20% corruption gain
+  - Supply Cache: +1 starting item
+- [x] Upgrade persistence:
+  - Upgrades applied to player at run start
+  - Multiple upgrade levels per category
+  - Costs scale with level
+- [x] Save/Load system:
+  - Saves to user://salvage_theology_save.dat
+  - Persists banked material, runs completed, upgrades
+  - Auto-loads on game start
+
+**Decisions:**
+- Station is accessed after successful extraction
+- Upgrades provide permanent progression across runs
+- Material only banks on extraction (death loses run progress)
+- Save uses Godot's variant storage for simplicity
+
+**Issues:**
+- None
+
+**Next:**
+- Phase 9: Visual Polish
+- Phase 10: Audio Polish
+
 ---
 
 ## Phase Tracker
@@ -184,10 +310,10 @@ Track what's built, decisions made, and what remains. Update after each session.
 | 2. Resources & HUD | Complete | Oxygen depletion, HUD, death/restart |
 | 3. Room Generation | Complete | Procedural dungeon, room transitions |
 | 4. Calyx Theology | Complete | Door payments, sanctuary, permanence |
-| 5. Basic Enemy | Not started | Watcher |
-| 6. Combat | Not started | Attack, damage |
-| 7. Material & Extraction | Not started | Run loop |
-| 8. Station & Meta | Not started | Progression |
+| 5. Basic Enemy | Complete | Watcher scout, Seeker attacker |
+| 6. Combat | Complete | Attack arc, damage, enemy death |
+| 7. Material & Extraction | Complete | Divine material, corruption, extraction |
+| 8. Station & Meta | Complete | Upgrades, save/load, meta-progression |
 | 9. Visual Polish | Not started | Animations, effects |
 | 10. Audio Polish | Not started | Sound, music |
 | 11. Additional Content | Not started | More gods, enemies |

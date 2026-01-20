@@ -276,15 +276,15 @@ func _on_game_over() -> void:
 	die()
 
 # Divine material collection
-func collect_material(material: Node2D) -> void:
-	if not material:
+func collect_material(divine_mat: Node2D) -> void:
+	if not divine_mat:
 		push_warning("[Player] collect_material: Material is null")
 		return
-	if not is_instance_valid(material):
+	if not is_instance_valid(divine_mat):
 		push_warning("[Player] collect_material: Material instance is invalid")
 		return
 
-	var value: int = material.value if "value" in material else 10
+	var value: int = divine_mat.value if "value" in divine_mat else 10
 	if value < 0:
 		push_warning("[Player] collect_material: Material value is negative (%d), using default 10" % value)
 		value = 10
@@ -295,7 +295,7 @@ func collect_material(material: Node2D) -> void:
 	corruption_level = minf(corruption_level, 1.0)  # Cap at 100%
 
 	_apply_corruption_effects()
-	material_collected.emit(material)
+	material_collected.emit(divine_mat)
 
 	if GameManager:
 		GameManager.record_material_collected(value)

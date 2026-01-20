@@ -143,6 +143,10 @@ func apply_upgrades_to_player(p: CharacterBody2D) -> void:
 	var speed_level: int = get_upgrade_level("move_speed")
 	p.move_speed = 200.0 * (1.0 + speed_level * 0.1)
 
+	# Corruption resistance
+	var corruption_resist_level: int = get_upgrade_level("corruption_resist")
+	p.corruption_rate = 0.002 * (1.0 - corruption_resist_level * 0.2)  # 20% reduction per level
+
 	# Starting items
 	var item_level: int = get_upgrade_level("starting_items")
 	for i in range(item_level):

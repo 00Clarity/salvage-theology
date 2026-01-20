@@ -13,6 +13,7 @@ signal dive_requested
 var upgrades_purchased: Dictionary = {}
 
 func _ready() -> void:
+	_load_progress()
 	_create_station_ui()
 	_create_background()
 	_update_material_display()

@@ -32,7 +32,7 @@ var enemies_killed: int = 0
 # Divine material collection
 var divine_material_value: int = 0
 var corruption_level: float = 0.0
-const CORRUPTION_PER_VALUE := 0.002  # 0.2% corruption per value point
+var corruption_rate: float = 0.002  # 0.2% corruption per value point (can be modified by upgrades)
 
 @onready var body: Node2D = $Body
 
@@ -104,6 +104,7 @@ func perform_attack() -> void:
 					if enemy.health <= 0:
 						enemies_killed += 1
 						enemy_killed.emit()
+						GameManager.record_enemy_killed()
 
 	# Cooldown
 	await get_tree().create_timer(attack_cooldown).timeout
@@ -230,11 +231,11 @@ func collect_material(material: Node2D) -> void:
 	if not material or not is_instance_valid(material):
 		return
 
-	var value: int = material.value if material.has_method("get") else 10
+	var value: int = material.value if "value" in material else 10
 	divine_material_value += value
 
 	# Increase corruption based on material value
-	corruption_level += value * CORRUPTION_PER_VALUE
+	corruption_level += value * corruption_rate
 	corruption_level = minf(corruption_level, 1.0)  # Cap at 100%
 
 	_apply_corruption_effects()
@@ -268,6 +269,7 @@ func reset() -> void:
 	enemies_killed = 0
 	divine_material_value = 0
 	corruption_level = 0.0
+	corruption_rate = 0.002
 	move_speed = 200.0
 	attack_damage = 20.0
 	body.modulate = Color.WHITE

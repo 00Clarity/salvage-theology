@@ -14,9 +14,18 @@ var run_summary: RunSummary
 
 func _ready() -> void:
 	dungeon_generator.room_entered.connect(_on_room_entered)
+	resource_system.resource_depleted.connect(_on_resource_depleted)
+	resource_system.resource_changed.connect(hud._on_resource_changed)
+	_apply_oxygen_upgrades()
 	_setup_payment_menu()
 	_setup_run_summary()
 	_start_dungeon()
+
+func _apply_oxygen_upgrades() -> void:
+	var oxygen_level: int = GameManager.get_upgrade_level("oxygen_capacity")
+	if oxygen_level > 0:
+		resource_system.max_oxygen = 100.0 * (1.0 + oxygen_level * 0.2)
+		resource_system.oxygen = resource_system.max_oxygen
 
 func _setup_payment_menu() -> void:
 	payment_menu = PaymentMenuScene.instantiate()

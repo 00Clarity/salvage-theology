@@ -169,10 +169,10 @@ func take_damage(amount: float) -> void:
 	health -= amount
 	_flash_damage()
 
-	if health <= max_health * 0.2:
-		_enter_starving_state()
-	elif health <= 0:
+	if health <= 0:
 		die()
+	elif health <= max_health * 0.2:
+		_enter_starving_state()
 
 func _enter_starving_state() -> void:
 	current_state = EchoState.STARVING

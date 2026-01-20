@@ -190,7 +190,6 @@ func _create_doors() -> void:
 	for direction in room_data.doors:
 		var door_pos: Vector2
 		var door_size: Vector2
-		var door_rotation: float = 0.0
 
 		match direction:
 			RoomData.DoorDirection.NORTH:

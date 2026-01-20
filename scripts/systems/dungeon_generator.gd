@@ -68,7 +68,7 @@ func _generate_side_rooms() -> void:
 			var room_data: RoomData = rooms[pos]
 			for dir in [RoomData.DoorDirection.NORTH, RoomData.DoorDirection.SOUTH,
 						RoomData.DoorDirection.EAST, RoomData.DoorDirection.WEST]:
-				var side_pos := pos + RoomData.direction_to_vector(dir)
+				var side_pos = pos + RoomData.direction_to_vector(dir)
 				if not rooms.has(side_pos) and randf() < 0.5:
 					var opposite := RoomData.opposite_direction(dir)
 					var required: Array[RoomData.DoorDirection] = [opposite]
@@ -125,7 +125,7 @@ func _update_visible_rooms() -> void:
 	# Hide distant rooms (more than 1 step away)
 	for pos in room_instances.keys():
 		var instance: Node2D = room_instances[pos]
-		var distance := abs(pos.x - current_room_pos.x) + abs(pos.y - current_room_pos.y)
+		var distance = abs(pos.x - current_room_pos.x) + abs(pos.y - current_room_pos.y)
 		instance.visible = distance <= 1
 
 func _clear_room_instances() -> void:

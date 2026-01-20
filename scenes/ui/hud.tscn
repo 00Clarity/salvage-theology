@@ -1,0 +1,78 @@
+[gd_scene load_steps=3 format=3 uid="uid://dr2x8kq5nmv7p"]
+
+[ext_resource type="Script" path="res://scripts/ui/hud.gd" id="1_hud"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
+bg_color = Color(0.04, 0.06, 0.1, 0.8)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[node name="HUD" type="CanvasLayer"]
+script = ExtResource("1_hud")
+
+[node name="OxygenContainer" type="VBoxContainer" parent="."]
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 220.0
+offset_bottom = 70.0
+
+[node name="OxygenLabel" type="Label" parent="OxygenContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "O2: 100%"
+
+[node name="OxygenBar" type="ProgressBar" parent="OxygenContainer"]
+custom_minimum_size = Vector2(200, 20)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_bg")
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="DeathPanel" type="Panel" parent="."]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -100.0
+offset_right = 150.0
+offset_bottom = 100.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="DeathPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+alignment = 1
+
+[node name="DeathLabel" type="Label" parent="DeathPanel/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0, 0, 1)
+theme_override_font_sizes/font_size = 24
+text = "OXYGEN DEPLETED"
+horizontal_alignment = 1
+
+[node name="SubLabel" type="Label" parent="DeathPanel/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 14
+text = "Signal lost..."
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="DeathPanel/VBoxContainer"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
+[node name="RestartButton" type="Button" parent="DeathPanel/VBoxContainer"]
+layout_mode = 2
+text = "TRY AGAIN"

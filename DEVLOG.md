@@ -8,8 +8,8 @@ Track what's built, decisions made, and what remains. Update after each session.
 
 ## Current Status
 
-**Phase:** Phase 1 (Core Foundation) - Complete
-**Playable:** Yes (basic movement in test room)
+**Phase:** Phase 2 (Resources & HUD) - Complete
+**Playable:** Yes (movement, oxygen depletion, death/restart)
 **Last Updated:** 2026-01-20
 
 ---
@@ -46,6 +46,31 @@ Track what's built, decisions made, and what remains. Update after each session.
 - Test in Godot editor to verify rendering
 - Begin Phase 2: Resources & HUD (oxygen system)
 
+### Session 2: 2026-01-20
+
+**Completed:**
+- [x] ResourceSystem with oxygen depletion (2 units/sec drain rate)
+- [x] GameManager autoload for game state coordination
+- [x] HUD with oxygen bar:
+  - Cyan → Orange (25%) → Red (15%) color transitions
+  - Pulsing warning effect at low oxygen
+  - Percentage label display
+- [x] Death panel with "OXYGEN DEPLETED" message
+- [x] Player death state (movement stops, visual collapse)
+- [x] Restart functionality (scene reload)
+
+**Decisions:**
+- Oxygen drains at 2 units/sec (50 seconds to death from full)
+- Warning color at 25%, critical at 15%
+- Death triggers visual fade + collapse animation on player
+- GameManager as autoload for global game state
+
+**Issues:**
+- None
+
+**Next:**
+- Begin Phase 3: Basic Room Generation
+
 ---
 
 ## Phase Tracker
@@ -53,7 +78,7 @@ Track what's built, decisions made, and what remains. Update after each session.
 | Phase | Status | Notes |
 |-------|--------|-------|
 | 1. Core Foundation | Complete | Player polygon body, movement, test room |
-| 2. Resources & HUD | Not started | Oxygen, death |
+| 2. Resources & HUD | Complete | Oxygen depletion, HUD, death/restart |
 | 3. Room Generation | Not started | Procedural layout |
 | 4. Calyx Theology | Not started | Door payments |
 | 5. Basic Enemy | Not started | Watcher |

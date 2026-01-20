@@ -49,6 +49,10 @@ move_right={
 ]
 }
 
+[autoload]
+
+GameManager="*res://scripts/systems/game_manager.gd"
+
 [rendering]
 
 renderer/rendering_method="gl_compatibility"

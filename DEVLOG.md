@@ -8,8 +8,8 @@ Track what's built, decisions made, and what remains. Update after each session.
 
 ## Current Status
 
-**Phase:** Phase 3 (Room Generation) - Complete
-**Playable:** Yes (procedural dungeon, room transitions)
+**Phase:** Phase 4 (Calyx Theology) - Complete
+**Playable:** Yes (door payments, sanctuary protection)
 **Last Updated:** 2026-01-20
 
 ---
@@ -134,6 +134,46 @@ Track what's built, decisions made, and what remains. Update after each session.
 **Next:**
 - Begin Phase 4: Calyx Theology (door payments)
 
+### Session 5: 2026-01-20
+
+**Completed:**
+- [x] TheologyDoor entity with three states (LOCKED, PAID, OPEN)
+- [x] Calyx Rule 1 - Payment system:
+  - ITEM payment: Sacrifice inventory item
+  - HEALTH payment: Sacrifice 10% max health
+  - MEMORY payment: Sacrifice learned information
+- [x] PaymentMenu UI with styled options
+- [x] Calyx Rule 2 - Permanence:
+  - Doors stay open forever once paid
+  - Door states persisted in GameManager
+  - Restored on room revisit
+- [x] Calyx Rule 3 - Sanctuary:
+  - Threshold zones inside door frames
+  - Player immune to damage while in threshold
+  - HUD indicator when protected
+- [x] Player inventory system (items, memories)
+- [x] HUD updates:
+  - Health bar with color warnings
+  - Inventory count display
+  - Sanctuary indicator
+- [x] GameManager tracking:
+  - Door permanence states
+  - Sacrifice statistics
+  - Depth tracking
+
+**Decisions:**
+- Doors start locked, require payment to open
+- Player starts with 2 items (Scrap Metal, Faded Cloth)
+- Health sacrifice cannot kill player (minimum 1 HP)
+- Threshold zones are 80% of door size
+- Game pauses during payment menu
+
+**Issues:**
+- None
+
+**Next:**
+- Begin Phase 5: Basic Enemy (Watcher)
+
 ---
 
 ## Phase Tracker
@@ -143,7 +183,7 @@ Track what's built, decisions made, and what remains. Update after each session.
 | 1. Core Foundation | Complete | Player polygon body, movement, test room |
 | 2. Resources & HUD | Complete | Oxygen depletion, HUD, death/restart |
 | 3. Room Generation | Complete | Procedural dungeon, room transitions |
-| 4. Calyx Theology | Not started | Door payments |
+| 4. Calyx Theology | Complete | Door payments, sanctuary, permanence |
 | 5. Basic Enemy | Not started | Watcher |
 | 6. Combat | Not started | Attack, damage |
 | 7. Material & Extraction | Not started | Run loop |

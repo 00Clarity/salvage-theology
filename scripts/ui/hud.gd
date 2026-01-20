@@ -6,6 +6,7 @@ const CRITICAL_COLOR := Color(1, 0, 0, 0.9)     # Red
 
 @onready var oxygen_bar: ProgressBar = $OxygenContainer/OxygenBar
 @onready var oxygen_label: Label = $OxygenContainer/OxygenLabel
+@onready var depth_label: Label = $DepthLabel
 @onready var death_panel: Panel = $DeathPanel
 @onready var restart_button: Button = $DeathPanel/VBoxContainer/RestartButton
 
@@ -44,6 +45,10 @@ func update_oxygen_display(value: float, max_value: float) -> void:
 		oxygen_bar.modulate = NORMAL_COLOR
 		is_warning = false
 		oxygen_bar.modulate.a = 1.0
+
+func update_depth(depth: int) -> void:
+	if depth_label:
+		depth_label.text = "DEPTH: %d" % depth
 
 func show_death_screen() -> void:
 	death_panel.visible = true

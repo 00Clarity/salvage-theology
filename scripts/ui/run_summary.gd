@@ -11,12 +11,12 @@ const CALYX_DARK := Color("#0a2020")
 var panel: Panel
 var title_label: Label
 var stats_container: VBoxContainer
-var material_label: Label
-var depth_label: Label
-var rooms_label: Label
-var enemies_label: Label
-var sacrifices_label: Label
-var banked_label: Label
+var material_label: VBoxContainer
+var depth_label: VBoxContainer
+var rooms_label: VBoxContainer
+var enemies_label: VBoxContainer
+var sacrifices_label: VBoxContainer
+var banked_label: VBoxContainer
 var continue_button: Button
 var restart_button: Button
 
@@ -110,7 +110,10 @@ func _create_ui() -> void:
 
 	# Total banked
 	banked_label = _create_stat_label("TOTAL BANKED", "0", 18)
-	banked_label.add_theme_color_override("font_color", Color("#ffd700"))
+	# Set gold color on the value label inside the container
+	var banked_value_lbl: Label = banked_label.get_node("Value")
+	if banked_value_lbl:
+		banked_value_lbl.add_theme_color_override("font_color", Color("#ffd700"))
 	container.add_child(banked_label)
 
 	# Button container

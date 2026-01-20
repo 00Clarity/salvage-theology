@@ -120,11 +120,11 @@ func perform_attack() -> void:
 			push_warning("[Player] perform_attack: Enemy %s missing take_damage method" % enemy.name)
 			continue
 
-		var distance := global_position.distance_to(enemy.global_position)
+		var distance: float = global_position.distance_to(enemy.global_position)
 		if distance < attack_range:
 			# Check if enemy is in front of player
-			var to_enemy := (enemy.global_position - global_position).normalized()
-			var dot := facing_direction.dot(to_enemy)
+			var to_enemy: Vector2 = (enemy.global_position - global_position).normalized()
+			var dot: float = facing_direction.dot(to_enemy)
 			if dot > 0.3:  # Roughly 70 degree cone
 				enemy.take_damage(attack_damage)
 				if "health" in enemy and enemy.health <= 0:

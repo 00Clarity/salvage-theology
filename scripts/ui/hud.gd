@@ -114,7 +114,7 @@ func _update_player_stats() -> void:
 		push_warning("[HUD] _update_player_stats: max_health is non-positive (%.2f)" % max_hp)
 		max_hp = 1.0  # Prevent division by zero
 
-	var health_percent := player_ref.health / max_hp
+	var health_percent: float = player_ref.health / max_hp
 	if health_bar:
 		health_bar.max_value = player_ref.max_health
 		health_bar.value = player_ref.health

@@ -8,8 +8,8 @@ Track what's built, decisions made, and what remains. Update after each session.
 
 ## Current Status
 
-**Phase:** Phase 2 (Resources & HUD) - Complete
-**Playable:** Yes (movement, oxygen depletion, death/restart)
+**Phase:** Phase 3 (Room Generation) - Complete
+**Playable:** Yes (procedural dungeon, room transitions)
 **Last Updated:** 2026-01-20
 
 ---
@@ -71,6 +71,36 @@ Track what's built, decisions made, and what remains. Update after each session.
 **Next:**
 - Begin Phase 3: Basic Room Generation
 
+### Session 3: 2026-01-20
+
+**Completed:**
+- [x] RoomData resource class with room types (Passage, Chamber, Shrine, Hazard)
+- [x] RoomGenerator for procedural room creation
+- [x] DungeonGenerator managing connected rooms:
+  - Main path generation (8 rooms deep)
+  - Side room branching (30% chance)
+  - Adjacent room loading/unloading
+- [x] GeneratedRoom scene with:
+  - Dynamic wall/floor polygon generation
+  - Door detection areas at cardinal directions
+  - Room type decorations (shrine altar, hazard warnings)
+  - Collision shapes with door gaps
+- [x] Room transitions when player enters doors
+- [x] Depth indicator in HUD
+
+**Decisions:**
+- Rooms are 10-18 tiles wide, 8-14 tiles tall (32px tiles)
+- Dungeon generates main path first, then branches
+- Only current + adjacent rooms loaded at once
+- Rooms larger at deeper depths
+- Room types affect decoration only (for now)
+
+**Issues:**
+- None
+
+**Next:**
+- Begin Phase 4: Calyx Theology (door payments)
+
 ---
 
 ## Phase Tracker
@@ -79,7 +109,7 @@ Track what's built, decisions made, and what remains. Update after each session.
 |-------|--------|-------|
 | 1. Core Foundation | Complete | Player polygon body, movement, test room |
 | 2. Resources & HUD | Complete | Oxygen depletion, HUD, death/restart |
-| 3. Room Generation | Not started | Procedural layout |
+| 3. Room Generation | Complete | Procedural dungeon, room transitions |
 | 4. Calyx Theology | Not started | Door payments |
 | 5. Basic Enemy | Not started | Watcher |
 | 6. Combat | Not started | Attack, damage |

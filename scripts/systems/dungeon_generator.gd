@@ -105,7 +105,7 @@ func _instantiate_room(grid_pos: Vector2i) -> void:
 	var room_data: RoomData = rooms[grid_pos]
 	var room_instance: Node2D = ROOM_SCENE.instantiate()
 	room_instance.setup(room_data, self)
-	room_container.add_child(room_instance)
+	room_container.call_deferred("add_child", room_instance)
 	room_instances[grid_pos] = room_instance
 
 func _update_visible_rooms() -> void:

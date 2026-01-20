@@ -147,7 +147,7 @@ func _alert_behavior(delta: float) -> void:
 
 func _trigger_full_alert() -> void:
 	current_state = EchoState.CHASE
-	var alert_pos := player_ref.global_position if (player_ref and is_instance_valid(player_ref)) else global_position
+	var alert_pos: Vector2 = player_ref.global_position if (player_ref and is_instance_valid(player_ref)) else global_position
 	alert_triggered.emit(alert_pos)
 
 	# Alert all echoes in room

@@ -94,7 +94,7 @@ func _create_floor_grid(half_w: float, half_h: float, inset: float) -> void:
 		])
 		line.width = 1.0
 		# Alternate line opacity for depth effect
-		var alpha := 0.03 if line_idx % 2 == 0 else 0.06
+		var alpha: float = 0.03 if line_idx % 2 == 0 else 0.06
 		line.default_color = Color(CALYX_TEAL, alpha)
 		grid_container.add_child(line)
 		y += TILE_SIZE / 2.0
@@ -211,13 +211,13 @@ func _create_wall_polygon(from: Vector2, to: Vector2) -> void:
 	add_child(wall)
 
 	# Wall edge highlight
-	var is_horizontal := abs(to.y - from.y) < abs(to.x - from.x)
+	var is_horizontal: bool = abs(to.y - from.y) < abs(to.x - from.x)
 	var edge := Polygon2D.new()
 	var edge_size := 3.0
 
 	if is_horizontal:
-		var y_inner := to.y if from.y < 0 else from.y
-		var y_outer := from.y if from.y < 0 else to.y
+		var y_inner: float = to.y if from.y < 0 else from.y
+		var y_outer: float = from.y if from.y < 0 else to.y
 		edge.polygon = PackedVector2Array([
 			Vector2(from.x, y_inner),
 			Vector2(to.x, y_inner),
@@ -225,7 +225,7 @@ func _create_wall_polygon(from: Vector2, to: Vector2) -> void:
 			Vector2(from.x, y_inner + (edge_size if from.y < 0 else -edge_size))
 		])
 	else:
-		var x_inner := to.x if from.x < 0 else from.x
+		var x_inner: float = to.x if from.x < 0 else from.x
 		edge.polygon = PackedVector2Array([
 			Vector2(x_inner, from.y),
 			Vector2(x_inner, to.y),
@@ -240,10 +240,10 @@ func _create_wall_polygon(from: Vector2, to: Vector2) -> void:
 	# Glowing accent line (outer glow)
 	var glow := Line2D.new()
 	if is_horizontal:
-		var y_inner := to.y if from.y < 0 else from.y
+		var y_inner: float = to.y if from.y < 0 else from.y
 		glow.points = PackedVector2Array([Vector2(from.x, y_inner), Vector2(to.x, y_inner)])
 	else:
-		var x_inner := to.x if from.x < 0 else from.x
+		var x_inner: float = to.x if from.x < 0 else from.x
 		glow.points = PackedVector2Array([Vector2(x_inner, from.y), Vector2(x_inner, to.y)])
 	glow.width = 6.0
 	glow.default_color = Color(CALYX_CYAN, 0.15)
@@ -253,10 +253,10 @@ func _create_wall_polygon(from: Vector2, to: Vector2) -> void:
 	# Sharp accent line (inner core)
 	var accent := Line2D.new()
 	if is_horizontal:
-		var y_inner := to.y if from.y < 0 else from.y
+		var y_inner: float = to.y if from.y < 0 else from.y
 		accent.points = PackedVector2Array([Vector2(from.x, y_inner), Vector2(to.x, y_inner)])
 	else:
-		var x_inner := to.x if from.x < 0 else from.x
+		var x_inner: float = to.x if from.x < 0 else from.x
 		accent.points = PackedVector2Array([Vector2(x_inner, from.y), Vector2(x_inner, to.y)])
 	accent.width = 2.0
 	accent.default_color = CALYX_ACCENT

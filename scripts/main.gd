@@ -35,12 +35,14 @@ func _ready() -> void:
 
 	if resource_system:
 		if resource_system.has_signal("resource_depleted"):
-			resource_system.resource_depleted.connect(_on_resource_depleted)
+			if not resource_system.resource_depleted.is_connected(_on_resource_depleted):
+				resource_system.resource_depleted.connect(_on_resource_depleted)
 		else:
 			push_error("[Main] _ready: ResourceSystem missing resource_depleted signal")
 
 		if resource_system.has_signal("resource_changed") and hud and hud.has_method("_on_resource_changed"):
-			resource_system.resource_changed.connect(hud._on_resource_changed)
+			if not resource_system.resource_changed.is_connected(hud._on_resource_changed):
+				resource_system.resource_changed.connect(hud._on_resource_changed)
 		else:
 			push_warning("[Main] _ready: Could not connect resource_changed to HUD")
 

@@ -10,7 +10,8 @@ func generate_room(depth: int, required_doors: Array[RoomData.DoorDirection] = [
 	var room := RoomData.new()
 
 	# Random size, larger rooms deeper in
-	var size_bonus := mini(depth / 3, 4)
+	@warning_ignore("integer_division")
+	var size_bonus: int = mini(depth / 3, 4)
 	room.width = randi_range(MIN_WIDTH, MAX_WIDTH + size_bonus)
 	room.height = randi_range(MIN_HEIGHT, MAX_HEIGHT + size_bonus)
 	room.depth = depth

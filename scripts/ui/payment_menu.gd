@@ -1,6 +1,9 @@
 class_name PaymentMenu
 extends CanvasLayer
 
+## PaymentMenu: UI for door sacrifice options
+## Displays available payment types and handles player selection
+
 signal payment_selected(payment_type: TheologyDoor.PaymentType)
 signal payment_cancelled
 
@@ -78,10 +81,22 @@ func _create_ui() -> void:
 	content.add_child(cancel_button)
 
 func show_menu(door: TheologyDoor) -> void:
+	if not door:
+		push_error("[PaymentMenu] show_menu: door is null")
+		return
+
 	current_door = door
 	_clear_options()
 
+	if not door.has_method("request_payment"):
+		push_error("[PaymentMenu] show_menu: door missing request_payment method")
+		return
+
 	var options := door.request_payment()
+
+	if not options_container:
+		push_error("[PaymentMenu] show_menu: options_container not initialized")
+		return
 
 	if options.is_empty():
 		# No valid payment options - show warning
@@ -92,15 +107,27 @@ func show_menu(door: TheologyDoor) -> void:
 		options_container.add_child(warning)
 	else:
 		for option in options:
+			if not option is Dictionary:
+				push_warning("[PaymentMenu] show_menu: Invalid option type")
+				continue
 			var btn := _create_option_button(option)
-			options_container.add_child(btn)
+			if btn:
+				options_container.add_child(btn)
 
 	visible = true
-	get_tree().paused = true
+	var tree := get_tree()
+	if tree:
+		tree.paused = true
+	else:
+		push_warning("[PaymentMenu] show_menu: SceneTree not available")
 
 func hide_menu() -> void:
 	visible = false
-	get_tree().paused = false
+	var tree := get_tree()
+	if tree:
+		tree.paused = false
+	else:
+		push_warning("[PaymentMenu] hide_menu: SceneTree not available")
 	current_door = null
 
 func _clear_options() -> void:
@@ -108,6 +135,10 @@ func _clear_options() -> void:
 		child.queue_free()
 
 func _create_option_button(option: Dictionary) -> Button:
+	if not option.has("label") or not option.has("description") or not option.has("type"):
+		push_error("[PaymentMenu] _create_option_button: Invalid option dictionary, missing required keys")
+		return null
+
 	var btn := Button.new()
 	btn.text = option.label
 	btn.tooltip_text = option.description
@@ -132,7 +163,7 @@ func _create_option_button(option: Dictionary) -> Button:
 	btn.add_theme_font_size_override("font_size", 14)
 
 	# Color by payment type
-	var type_color: Color
+	var type_color: Color = CALYX_CYAN  # Default
 	match option.type:
 		TheologyDoor.PaymentType.ITEM:
 			type_color = Color("#ffd700")
@@ -140,6 +171,8 @@ func _create_option_button(option: Dictionary) -> Button:
 			type_color = Color("#ff4444")
 		TheologyDoor.PaymentType.MEMORY:
 			type_color = Color("#e6e6fa")
+		_:
+			push_warning("[PaymentMenu] _create_option_button: Unknown payment type %s" % option.type)
 
 	btn.add_theme_color_override("font_color", type_color)
 
@@ -148,9 +181,14 @@ func _create_option_button(option: Dictionary) -> Button:
 
 func _on_option_selected(payment_type: TheologyDoor.PaymentType) -> void:
 	if current_door:
-		var success := current_door.execute_payment(payment_type)
-		if success:
-			payment_selected.emit(payment_type)
+		if current_door.has_method("execute_payment"):
+			var success := current_door.execute_payment(payment_type)
+			if success:
+				payment_selected.emit(payment_type)
+		else:
+			push_error("[PaymentMenu] _on_option_selected: current_door missing execute_payment method")
+	else:
+		push_warning("[PaymentMenu] _on_option_selected: No current_door set")
 
 	hide_menu()
 

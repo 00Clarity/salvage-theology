@@ -1,5 +1,8 @@
 extends Node
 
+## GameManager: Central game state and persistence controller
+## Handles player registration, game state, door persistence, stats, and save/load
+
 signal game_over
 signal game_restarted
 signal extraction_complete(summary: Dictionary)
@@ -32,6 +35,12 @@ func _ready() -> void:
 	load_game()
 
 func register_player(p: CharacterBody2D) -> void:
+	if not p:
+		push_error("[GameManager] register_player: Attempted to register null player")
+		return
+	if not is_instance_valid(p):
+		push_error("[GameManager] register_player: Player instance is invalid")
+		return
 	player = p
 
 func trigger_death() -> void:
@@ -76,12 +85,18 @@ func record_item_sacrifice() -> void:
 	items_sacrificed += 1
 
 func record_health_sacrifice(amount: float) -> void:
+	if amount < 0:
+		push_warning("[GameManager] record_health_sacrifice: Negative amount %.2f, using absolute value" % amount)
+		amount = absf(amount)
 	health_sacrificed += amount
 
 func record_memory_sacrifice() -> void:
 	memories_sacrificed += 1
 
 func record_material_collected(value: int) -> void:
+	if value < 0:
+		push_warning("[GameManager] record_material_collected: Negative value %d, ignoring" % value)
+		return
 	material_collected += value
 
 func record_enemy_killed() -> void:
@@ -132,27 +147,52 @@ func get_all_upgrades() -> Dictionary:
 	return upgrade_levels.duplicate()
 
 func apply_upgrades_to_player(p: CharacterBody2D) -> void:
+	if not p:
+		push_error("[GameManager] apply_upgrades_to_player: Player is null")
+		return
+	if not is_instance_valid(p):
+		push_error("[GameManager] apply_upgrades_to_player: Player instance is invalid")
+		return
+
 	# Apply permanent upgrades to player at run start
 	var health_level: int = get_upgrade_level("health_boost")
+	if health_level < 0:
+		push_warning("[GameManager] apply_upgrades_to_player: Invalid health_boost level %d, clamping to 0" % health_level)
+		health_level = 0
 	p.max_health = 100.0 + health_level * 25.0
 	p.health = p.max_health
 
 	var attack_level: int = get_upgrade_level("attack_power")
+	if attack_level < 0:
+		push_warning("[GameManager] apply_upgrades_to_player: Invalid attack_power level %d, clamping to 0" % attack_level)
+		attack_level = 0
 	p.base_attack_damage = 20.0 * (1.0 + attack_level * 0.1)
 	p.attack_damage = p.base_attack_damage
 
 	var speed_level: int = get_upgrade_level("move_speed")
+	if speed_level < 0:
+		push_warning("[GameManager] apply_upgrades_to_player: Invalid move_speed level %d, clamping to 0" % speed_level)
+		speed_level = 0
 	p.base_move_speed = 200.0 * (1.0 + speed_level * 0.1)
 	p.move_speed = p.base_move_speed
 
 	# Corruption resistance (caps at 75% reduction at level 5)
 	var corruption_resist_level: int = get_upgrade_level("corruption_resist")
+	if corruption_resist_level < 0:
+		push_warning("[GameManager] apply_upgrades_to_player: Invalid corruption_resist level %d, clamping to 0" % corruption_resist_level)
+		corruption_resist_level = 0
 	p.corruption_rate = 0.002 * maxf(0.25, 1.0 - corruption_resist_level * 0.15)  # 15% reduction per level, max 75%
 
 	# Starting items
 	var item_level: int = get_upgrade_level("starting_items")
+	if item_level < 0:
+		push_warning("[GameManager] apply_upgrades_to_player: Invalid starting_items level %d, clamping to 0" % item_level)
+		item_level = 0
 	for i in range(item_level):
-		p.add_item("Salvaged Component")
+		if p.has_method("add_item"):
+			p.add_item("Salvaged Component")
+		else:
+			push_error("[GameManager] apply_upgrades_to_player: Player missing add_item method")
 
 # Save/Load system
 func save_game() -> void:
@@ -163,23 +203,45 @@ func save_game() -> void:
 	}
 
 	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
-	if file:
-		file.store_var(save_data)
-		file.close()
+	if not file:
+		var error_code := FileAccess.get_open_error()
+		push_error("[GameManager] save_game: Failed to open save file at %s (error: %d)" % [SAVE_PATH, error_code])
+		return
+	file.store_var(save_data)
+	file.close()
 
 func load_game() -> void:
 	if not FileAccess.file_exists(SAVE_PATH):
-		return
+		return  # No save file is normal for first run
 
 	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
-	if file:
-		var save_data: Variant = file.get_var()
-		file.close()
+	if not file:
+		var error_code := FileAccess.get_open_error()
+		push_error("[GameManager] load_game: Failed to open save file at %s (error: %d)" % [SAVE_PATH, error_code])
+		return
 
-		if save_data is Dictionary:
-			total_material_banked = save_data.get("total_material_banked", 0)
-			runs_completed = save_data.get("runs_completed", 0)
-			upgrade_levels = save_data.get("upgrade_levels", {})
+	var save_data: Variant = file.get_var()
+	file.close()
+
+	if save_data == null:
+		push_error("[GameManager] load_game: Save data is null, file may be corrupted")
+		return
+
+	if not save_data is Dictionary:
+		push_error("[GameManager] load_game: Save data is not a Dictionary (type: %s)" % typeof(save_data))
+		return
+
+	total_material_banked = save_data.get("total_material_banked", 0)
+	runs_completed = save_data.get("runs_completed", 0)
+	upgrade_levels = save_data.get("upgrade_levels", {})
+
+	# Validate loaded data
+	if total_material_banked < 0:
+		push_warning("[GameManager] load_game: Invalid total_material_banked %d, resetting to 0" % total_material_banked)
+		total_material_banked = 0
+	if runs_completed < 0:
+		push_warning("[GameManager] load_game: Invalid runs_completed %d, resetting to 0" % runs_completed)
+		runs_completed = 0
 
 func has_save_file() -> bool:
 	return FileAccess.file_exists(SAVE_PATH)

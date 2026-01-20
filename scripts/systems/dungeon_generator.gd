@@ -1,6 +1,9 @@
 class_name DungeonGenerator
 extends Node2D
 
+## DungeonGenerator: Procedurally generates dungeon layout and manages room transitions
+## Handles room creation, navigation, and state persistence
+
 signal room_entered(room_data: RoomData)
 
 const ROOM_SCENE := preload("res://scenes/rooms/generated_room.tscn")
@@ -15,8 +18,15 @@ func generate_dungeon() -> void:
 	rooms.clear()
 	_clear_room_instances()
 
+	if not room_generator:
+		push_error("[DungeonGenerator] generate_dungeon: RoomGenerator is null")
+		return
+
 	# Generate starting room at origin
 	var start_room := room_generator.generate_room(1)
+	if not start_room:
+		push_error("[DungeonGenerator] generate_dungeon: Failed to generate starting room")
+		return
 	start_room.grid_position = Vector2i.ZERO
 	# Starting room always has at least 2 doors
 	if start_room.doors.size() < 2:
@@ -82,11 +92,17 @@ func _generate_side_rooms() -> void:
 
 func enter_room(grid_pos: Vector2i) -> void:
 	if not rooms.has(grid_pos):
+		push_warning("[DungeonGenerator] enter_room: No room at position %s" % grid_pos)
+		return
+
+	var room_data: RoomData = rooms[grid_pos]
+	if not room_data:
+		push_error("[DungeonGenerator] enter_room: Room data is null at position %s" % grid_pos)
 		return
 
 	current_room_pos = grid_pos
 	_show_current_room()
-	room_entered.emit(rooms[grid_pos])
+	room_entered.emit(room_data)
 
 func get_current_room() -> RoomData:
 	return rooms.get(current_room_pos)
@@ -99,20 +115,47 @@ func _show_current_room() -> void:
 	if not room_instances.has(current_room_pos):
 		_instantiate_room(current_room_pos)
 
+	# Verify room was instantiated
+	if not room_instances.has(current_room_pos):
+		push_error("[DungeonGenerator] _show_current_room: Failed to instantiate room at %s" % current_room_pos)
+		return
+
 	# Hide all rooms except current
 	for pos in room_instances.keys():
 		var instance: Node2D = room_instances[pos]
+		if not is_instance_valid(instance):
+			push_warning("[DungeonGenerator] _show_current_room: Invalid room instance at %s" % pos)
+			continue
 		instance.visible = (pos == current_room_pos)
 
 func _instantiate_room(grid_pos: Vector2i) -> void:
 	if not rooms.has(grid_pos):
+		push_warning("[DungeonGenerator] _instantiate_room: No room data at position %s" % grid_pos)
 		return
 	if room_instances.has(grid_pos):
-		return
+		return  # Already instantiated, not an error
 
 	var room_data: RoomData = rooms[grid_pos]
+	if not room_data:
+		push_error("[DungeonGenerator] _instantiate_room: Room data is null at position %s" % grid_pos)
+		return
+
+	if not ROOM_SCENE:
+		push_error("[DungeonGenerator] _instantiate_room: ROOM_SCENE not loaded")
+		return
+
 	var room_instance: Node2D = ROOM_SCENE.instantiate()
-	room_instance.setup(room_data, self)
+	if not room_instance:
+		push_error("[DungeonGenerator] _instantiate_room: Failed to instantiate room scene")
+		return
+
+	if room_instance.has_method("setup"):
+		room_instance.setup(room_data, self)
+	else:
+		push_error("[DungeonGenerator] _instantiate_room: Room instance missing setup method")
+		room_instance.queue_free()
+		return
+
 	room_instance.z_index = -1  # Render behind player
 	room_instance.position = Vector2.ZERO  # All rooms at origin
 	add_child(room_instance)

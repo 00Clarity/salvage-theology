@@ -1,6 +1,9 @@
 class_name DivineMaterial
 extends Area2D
 
+## DivineMaterial: Collectible resources dropped by enemies or found in rooms
+## Has grade-based value and visual appearance
+
 signal collected(material: DivineMaterial)
 
 enum Grade { COMMON, UNCOMMON, RARE, EPIC, LEGENDARY }
@@ -33,11 +36,21 @@ var outer_ring: Line2D
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
+
+	# Validate grade and get value
+	if not GRADE_VALUES.has(grade):
+		push_warning("[DivineMaterial] _ready: Invalid grade %d, defaulting to COMMON" % grade)
+		grade = Grade.COMMON
 	value = GRADE_VALUES[grade]
+
 	_create_visual()
 	_create_collision()
 
 func _create_visual() -> void:
+	# Validate grade color exists
+	if not GRADE_COLORS.has(grade):
+		push_warning("[DivineMaterial] _create_visual: No color for grade %d, using COMMON" % grade)
+		grade = Grade.COMMON
 	var color := GRADE_COLORS[grade]
 
 	# Main body - hexagonal crystal
@@ -105,16 +118,27 @@ func _process(delta: float) -> void:
 	# Gentle pulse
 	pulse_time += delta * 2.0
 	var pulse := 1.0 + sin(pulse_time) * 0.1
-	body_polygon.scale = Vector2(pulse, pulse)
-	glow_light.energy = (0.4 + grade * 0.15) * pulse
+
+	if body_polygon:
+		body_polygon.scale = Vector2(pulse, pulse)
+
+	if glow_light:
+		glow_light.energy = (0.4 + grade * 0.15) * pulse
 
 	# Slow rotation
-	outer_ring.rotation += delta * 0.5
+	if outer_ring:
+		outer_ring.rotation += delta * 0.5
 
 func _on_body_entered(body: Node2D) -> void:
+	if not body:
+		push_warning("[DivineMaterial] _on_body_entered: body is null")
+		return
+
 	if body.is_in_group("player"):
 		if body.has_method("collect_material"):
 			body.collect_material(self)
+		else:
+			push_warning("[DivineMaterial] _on_body_entered: Player missing collect_material method")
 		collected.emit(self)
 		_play_pickup_effect()
 		queue_free()
@@ -129,6 +153,14 @@ func _play_pickup_effect() -> void:
 
 static func create_random(depth: int) -> DivineMaterial:
 	var material := DivineMaterial.new()
+	if not material:
+		push_error("[DivineMaterial] create_random: Failed to create material instance")
+		return null
+
+	# Validate depth
+	if depth < 0:
+		push_warning("[DivineMaterial] create_random: Negative depth %d, clamping to 0" % depth)
+		depth = 0
 
 	# Grade distribution based on depth
 	var roll := randf()

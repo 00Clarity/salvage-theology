@@ -1,6 +1,9 @@
 class_name ExtractionPoint
 extends Area2D
 
+## ExtractionPoint: Escape zone that triggers run completion
+## Player must stand in zone for extraction_time to extract successfully
+
 signal extraction_started(point: ExtractionPoint)
 
 const CALYX_CYAN := Color("#00ffff")
@@ -110,12 +113,19 @@ func _process(delta: float) -> void:
 	# Pulse animation
 	pulse_time += delta * 2.0
 	var pulse := 1.0 + sin(pulse_time) * 0.1
-	outer_ring.scale = Vector2(pulse, pulse)
-	inner_ring.rotation += delta * 0.5
-	glow_light.energy = 0.6 + sin(pulse_time) * 0.2
+
+	if outer_ring:
+		outer_ring.scale = Vector2(pulse, pulse)
+	if inner_ring:
+		inner_ring.rotation += delta * 0.5
+	if glow_light:
+		glow_light.energy = 0.6 + sin(pulse_time) * 0.2
 
 	# Handle extraction
 	if is_extracting and player_in_range:
+		if extraction_time <= 0:
+			push_warning("[ExtractionPoint] _process: extraction_time is non-positive (%.2f)" % extraction_time)
+			extraction_time = 2.0  # Default
 		extraction_progress += delta / extraction_time
 		_update_progress_ring()
 
@@ -125,9 +135,14 @@ func _process(delta: float) -> void:
 		# Abort extraction if player leaves
 		is_extracting = false
 		extraction_progress = 0.0
-		progress_ring.visible = false
+		if progress_ring:
+			progress_ring.visible = false
 
 func _update_progress_ring() -> void:
+	if not progress_ring:
+		push_warning("[ExtractionPoint] _update_progress_ring: progress_ring is null")
+		return
+
 	progress_ring.visible = true
 	var points := PackedVector2Array()
 	var segments := int(extraction_progress * 32)
@@ -142,19 +157,32 @@ func _update_progress_ring() -> void:
 func _complete_extraction() -> void:
 	is_extracting = false
 	extraction_progress = 0.0
-	progress_ring.visible = false
+
+	if progress_ring:
+		progress_ring.visible = false
 
 	# Trigger extraction complete
-	GameManager.complete_extraction()
+	if GameManager:
+		GameManager.complete_extraction()
+	else:
+		push_error("[ExtractionPoint] _complete_extraction: GameManager not available")
 
 	# Visual effect
 	var tween := create_tween()
-	tween.parallel().tween_property(outer_ring, "scale", Vector2(2, 2), 0.3)
-	tween.parallel().tween_property(outer_ring, "modulate:a", 0.0, 0.3)
-	tween.parallel().tween_property(inner_ring, "scale", Vector2(2, 2), 0.3)
-	tween.parallel().tween_property(glow_light, "energy", 3.0, 0.2)
+	if tween:
+		if outer_ring:
+			tween.parallel().tween_property(outer_ring, "scale", Vector2(2, 2), 0.3)
+			tween.parallel().tween_property(outer_ring, "modulate:a", 0.0, 0.3)
+		if inner_ring:
+			tween.parallel().tween_property(inner_ring, "scale", Vector2(2, 2), 0.3)
+		if glow_light:
+			tween.parallel().tween_property(glow_light, "energy", 3.0, 0.2)
 
 func _on_body_entered(body: Node2D) -> void:
+	if not body:
+		push_warning("[ExtractionPoint] _on_body_entered: body is null")
+		return
+
 	if body.is_in_group("player"):
 		player_in_range = true
 		is_extracting = true
@@ -162,11 +190,19 @@ func _on_body_entered(body: Node2D) -> void:
 		_show_extraction_prompt()
 
 func _on_body_exited(body: Node2D) -> void:
+	if not body:
+		return
+
 	if body.is_in_group("player"):
 		player_in_range = false
 
 func _show_extraction_prompt() -> void:
+	if not outer_ring:
+		push_warning("[ExtractionPoint] _show_extraction_prompt: outer_ring is null")
+		return
+
 	# Flash the rings
 	var tween := create_tween()
-	tween.tween_property(outer_ring, "default_color", Color("#00ff00"), 0.2)
-	tween.tween_property(outer_ring, "default_color", CALYX_CYAN, 0.2)
+	if tween:
+		tween.tween_property(outer_ring, "default_color", Color("#00ff00"), 0.2)
+		tween.tween_property(outer_ring, "default_color", CALYX_CYAN, 0.2)

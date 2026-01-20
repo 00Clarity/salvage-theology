@@ -1,6 +1,9 @@
 class_name EchoBase
 extends CharacterBody2D
 
+## EchoBase: Base class for all Echo enemies
+## Implements state machine for patrol, alert, chase, and combat behaviors
+
 signal player_detected
 signal died
 signal alert_triggered(position: Vector2)
@@ -80,8 +83,16 @@ func _patrol_behavior(delta: float) -> void:
 		current_state = EchoState.IDLE
 
 func _check_for_player() -> void:
-	player_ref = get_tree().get_first_node_in_group("player")
+	var tree := get_tree()
+	if not tree:
+		push_warning("[EchoBase] _check_for_player: SceneTree not available")
+		return
+
+	player_ref = tree.get_first_node_in_group("player")
 	if not player_ref:
+		return
+	if not is_instance_valid(player_ref):
+		player_ref = null
 		return
 
 	var distance := global_position.distance_to(player_ref.global_position)
@@ -90,11 +101,20 @@ func _check_for_player() -> void:
 			_enter_alert_state()
 
 func _can_see_player() -> bool:
-	if not player_ref:
+	if not player_ref or not is_instance_valid(player_ref):
 		return false
 
 	# Raycast to check line of sight
-	var space_state := get_world_2d().direct_space_state
+	var world := get_world_2d()
+	if not world:
+		push_warning("[EchoBase] _can_see_player: World2D not available")
+		return false
+
+	var space_state := world.direct_space_state
+	if not space_state:
+		push_warning("[EchoBase] _can_see_player: PhysicsDirectSpaceState2D not available")
+		return false
+
 	var query := PhysicsRayQueryParameters2D.create(
 		global_position,
 		player_ref.global_position,
@@ -104,6 +124,8 @@ func _can_see_player() -> bool:
 
 	var result := space_state.intersect_ray(query)
 	if result.is_empty():
+		return true
+	if result.collider == null:
 		return true
 	return result.collider == player_ref or result.collider.is_in_group("player")
 
@@ -125,12 +147,20 @@ func _alert_behavior(delta: float) -> void:
 
 func _trigger_full_alert() -> void:
 	current_state = EchoState.CHASE
-	alert_triggered.emit(player_ref.global_position if player_ref else global_position)
+	var alert_pos := player_ref.global_position if (player_ref and is_instance_valid(player_ref)) else global_position
+	alert_triggered.emit(alert_pos)
 
 	# Alert all echoes in room
-	for echo in get_tree().get_nodes_in_group("echo"):
+	var tree := get_tree()
+	if not tree:
+		push_warning("[EchoBase] _trigger_full_alert: SceneTree not available")
+		return
+
+	for echo in tree.get_nodes_in_group("echo"):
+		if not is_instance_valid(echo):
+			continue
 		if echo != self and echo.has_method("on_player_alert"):
-			echo.on_player_alert(player_ref.global_position if player_ref else global_position)
+			echo.on_player_alert(alert_pos)
 
 func _chase_behavior(delta: float) -> void:
 	if not player_ref or not is_instance_valid(player_ref):
@@ -166,6 +196,13 @@ func on_player_alert(player_pos: Vector2) -> void:
 		current_state = EchoState.CHASE
 
 func take_damage(amount: float) -> void:
+	if current_state == EchoState.DEAD:
+		return
+
+	if amount < 0:
+		push_warning("[EchoBase] take_damage: Negative amount %.2f, using absolute value" % amount)
+		amount = absf(amount)
+
 	health -= amount
 	_flash_damage()
 
@@ -188,21 +225,29 @@ func _find_retreat_point() -> Vector2:
 
 func _flash_damage() -> void:
 	var tween := create_tween()
-	tween.tween_property(self, "modulate", Color(1, 0.3, 0.3), 0.1)
-	tween.tween_property(self, "modulate", Color.WHITE, 0.2)
+	if tween:
+		tween.tween_property(self, "modulate", Color(1, 0.3, 0.3), 0.1)
+		tween.tween_property(self, "modulate", Color.WHITE, 0.2)
+	else:
+		push_warning("[EchoBase] _flash_damage: Failed to create tween")
 
 func die() -> void:
 	if current_state == EchoState.DEAD:
 		return
 
 	current_state = EchoState.DEAD
+	velocity = Vector2.ZERO
 	died.emit()
 	_play_death_effect()
 	_drop_loot()
 
 	var tween := create_tween()
-	tween.tween_property(self, "modulate:a", 0.0, 0.5)
-	tween.tween_callback(queue_free)
+	if tween:
+		tween.tween_property(self, "modulate:a", 0.0, 0.5)
+		tween.tween_callback(queue_free)
+	else:
+		push_warning("[EchoBase] die: Failed to create tween, using immediate cleanup")
+		queue_free()
 
 func _play_death_effect() -> void:
 	# Override in subclass

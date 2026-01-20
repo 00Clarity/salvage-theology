@@ -1,5 +1,8 @@
 extends Node2D
 
+## Station: Hub scene for between-run upgrades and progression
+## Handles material display, upgrade purchases, and dive initiation
+
 const CALYX_CYAN := Color("#00ffff")
 const CALYX_TEAL := Color("#40e0d0")
 const CALYX_DARK := Color("#0a2020")
@@ -17,6 +20,9 @@ func _ready() -> void:
 	_create_station_ui()
 	_create_background()
 	_update_material_display()
+
+	if not GameManager:
+		push_error("[Station] _ready: GameManager autoload not found")
 
 func _create_background() -> void:
 	# Dark background
@@ -124,6 +130,14 @@ func _create_upgrade_panel() -> Control:
 	return panel
 
 func _create_upgrade_card(upgrade: Dictionary) -> Panel:
+	if not upgrade.has("id") or not upgrade.has("name") or not upgrade.has("description"):
+		push_error("[Station] _create_upgrade_card: Invalid upgrade dictionary")
+		return Panel.new()  # Return empty panel on error
+
+	if not upgrade.has("cost") or not upgrade.has("max_level"):
+		push_error("[Station] _create_upgrade_card: Upgrade missing cost or max_level")
+		return Panel.new()
+
 	var card := Panel.new()
 	card.custom_minimum_size = Vector2(340, 160)
 
@@ -249,11 +263,23 @@ func _get_available_upgrades() -> Array:
 	]
 
 func _on_upgrade_purchased(upgrade: Dictionary) -> void:
+	if not upgrade.has("id") or not upgrade.has("max_level") or not upgrade.has("cost"):
+		push_error("[Station] _on_upgrade_purchased: Invalid upgrade dictionary")
+		return
+
 	var current_level: int = upgrades_purchased.get(upgrade.id, 0)
 	if current_level >= upgrade.max_level:
 		return
 
+	if not GameManager:
+		push_error("[Station] _on_upgrade_purchased: GameManager not available")
+		return
+
 	var cost: int = upgrade.cost * (current_level + 1)
+	if cost < 0:
+		push_warning("[Station] _on_upgrade_purchased: Cost overflow for %s" % upgrade.id)
+		return
+
 	if GameManager.total_material_banked < cost:
 		return
 
@@ -265,27 +291,63 @@ func _on_upgrade_purchased(upgrade: Dictionary) -> void:
 	_save_progress()
 
 	# Refresh upgrade panel
-	upgrade_panel.queue_free()
+	if upgrade_panel:
+		upgrade_panel.queue_free()
 	upgrade_panel = _create_upgrade_panel()
-	upgrade_panel.position = Vector2(100, 150)
-	add_child(upgrade_panel)
+	if upgrade_panel:
+		upgrade_panel.position = Vector2(100, 150)
+		add_child(upgrade_panel)
+	else:
+		push_error("[Station] _on_upgrade_purchased: Failed to create upgrade panel")
 
 func _apply_upgrade(upgrade: Dictionary) -> void:
+	if not upgrade.has("id"):
+		push_error("[Station] _apply_upgrade: Upgrade missing id")
+		return
+
 	# Upgrades are applied when starting a new run
 	# Store in GameManager for persistence
-	GameManager.set_upgrade_level(upgrade.id, upgrades_purchased.get(upgrade.id, 0))
+	if GameManager:
+		GameManager.set_upgrade_level(upgrade.id, upgrades_purchased.get(upgrade.id, 0))
+	else:
+		push_error("[Station] _apply_upgrade: GameManager not available")
 
 func _update_material_display() -> void:
-	if material_display:
+	if not material_display:
+		push_warning("[Station] _update_material_display: material_display not initialized")
+		return
+
+	if GameManager:
 		material_display.text = str(GameManager.total_material_banked)
+	else:
+		push_error("[Station] _update_material_display: GameManager not available")
+		material_display.text = "0"
 
 func _on_dive_pressed() -> void:
 	dive_requested.emit()
-	get_tree().change_scene_to_file("res://scenes/main.tscn")
+
+	var tree := get_tree()
+	if tree:
+		var error := tree.change_scene_to_file("res://scenes/main.tscn")
+		if error != OK:
+			push_error("[Station] _on_dive_pressed: Failed to change scene (error: %d)" % error)
+	else:
+		push_error("[Station] _on_dive_pressed: SceneTree not available")
 
 func _save_progress() -> void:
-	GameManager.save_game()
+	if GameManager:
+		GameManager.save_game()
+	else:
+		push_error("[Station] _save_progress: GameManager not available")
 
 func _load_progress() -> void:
+	if not GameManager:
+		push_error("[Station] _load_progress: GameManager not available")
+		return
+
 	GameManager.load_game()
 	upgrades_purchased = GameManager.get_all_upgrades()
+
+	if upgrades_purchased == null:
+		push_warning("[Station] _load_progress: get_all_upgrades returned null, using empty dict")
+		upgrades_purchased = {}

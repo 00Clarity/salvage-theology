@@ -1,5 +1,8 @@
 extends CharacterBody2D
 
+## Player: Main player character controller
+## Handles movement, combat, inventory, health, and material collection
+
 signal item_sacrificed(item_name: String)
 signal health_sacrificed(amount: float)
 signal memory_sacrificed(memory_name: String)
@@ -45,11 +48,20 @@ var attack_arc: Line2D
 
 func _ready() -> void:
 	add_to_group("player")
-	GameManager.register_player(self)
-	GameManager.apply_upgrades_to_player(self)
+
+	if not GameManager:
+		push_error("[Player] _ready: GameManager autoload not found")
+	else:
+		GameManager.register_player(self)
+		GameManager.apply_upgrades_to_player(self)
+		if not GameManager.game_over.is_connected(_on_game_over):
+			GameManager.game_over.connect(_on_game_over)
+
 	health = max_health
-	GameManager.game_over.connect(_on_game_over)
 	_create_attack_visual()
+
+	if not body:
+		push_error("[Player] _ready: Body node not found at $Body")
 
 func _create_attack_visual() -> void:
 	attack_arc = Line2D.new()
@@ -93,25 +105,38 @@ func perform_attack() -> void:
 	_show_attack_arc()
 
 	# Find enemies in range
-	var enemies := get_tree().get_nodes_in_group("echo")
+	var tree := get_tree()
+	if not tree:
+		push_error("[Player] perform_attack: SceneTree not available")
+		is_attacking = false
+		can_attack = true
+		return
+
+	var enemies := tree.get_nodes_in_group("echo")
 	for enemy in enemies:
 		if not is_instance_valid(enemy):
 			continue
+		if not enemy.has_method("take_damage"):
+			push_warning("[Player] perform_attack: Enemy %s missing take_damage method" % enemy.name)
+			continue
+
 		var distance := global_position.distance_to(enemy.global_position)
 		if distance < attack_range:
 			# Check if enemy is in front of player
 			var to_enemy := (enemy.global_position - global_position).normalized()
 			var dot := facing_direction.dot(to_enemy)
 			if dot > 0.3:  # Roughly 70 degree cone
-				if enemy.has_method("take_damage"):
-					enemy.take_damage(attack_damage)
-					if enemy.health <= 0:
-						enemies_killed += 1
-						enemy_killed.emit()
+				enemy.take_damage(attack_damage)
+				if "health" in enemy and enemy.health <= 0:
+					enemies_killed += 1
+					enemy_killed.emit()
+					if GameManager:
 						GameManager.record_enemy_killed()
 
 	# Cooldown
-	await get_tree().create_timer(attack_cooldown).timeout
+	var timer := tree.create_timer(attack_cooldown)
+	if timer:
+		await timer.timeout
 	can_attack = true
 	is_attacking = false
 
@@ -180,12 +205,20 @@ func take_damage(amount: float) -> void:
 	if is_dead or invincible:
 		return
 
+	if amount < 0:
+		push_warning("[Player] take_damage: Negative damage %.2f, using absolute value" % amount)
+		amount = absf(amount)
+
 	health -= amount
 	_flash_damage()
 
 	# Brief invincibility
 	invincible = true
-	await get_tree().create_timer(0.5).timeout
+	var tree := get_tree()
+	if tree:
+		var timer := tree.create_timer(0.5)
+		if timer:
+			await timer.timeout
 	invincible = false
 
 	if health <= 0:
@@ -195,14 +228,22 @@ func heal(amount: float) -> void:
 	health = min(health + amount, max_health)
 
 func _flash_damage() -> void:
+	if not body:
+		push_warning("[Player] _flash_damage: Body node not available")
+		return
 	var tween := create_tween()
-	tween.tween_property(body, "modulate", Color(1, 0.3, 0.3), 0.1)
-	tween.tween_property(body, "modulate", Color.WHITE, 0.2)
+	if tween:
+		tween.tween_property(body, "modulate", Color(1, 0.3, 0.3), 0.1)
+		tween.tween_property(body, "modulate", Color.WHITE, 0.2)
 
 func _show_protection_effect() -> void:
+	if not body:
+		push_warning("[Player] _show_protection_effect: Body node not available")
+		return
 	var tween := create_tween()
-	tween.tween_property(body, "modulate", Color(0, 1, 1, 1.5), 0.1)
-	tween.tween_property(body, "modulate", Color.WHITE, 0.2)
+	if tween:
+		tween.tween_property(body, "modulate", Color(0, 1, 1, 1.5), 0.1)
+		tween.tween_property(body, "modulate", Color.WHITE, 0.2)
 
 # Threshold tracking
 func enter_threshold() -> void:
@@ -232,10 +273,17 @@ func _on_game_over() -> void:
 
 # Divine material collection
 func collect_material(material: Node2D) -> void:
-	if not material or not is_instance_valid(material):
+	if not material:
+		push_warning("[Player] collect_material: Material is null")
+		return
+	if not is_instance_valid(material):
+		push_warning("[Player] collect_material: Material instance is invalid")
 		return
 
 	var value: int = material.value if "value" in material else 10
+	if value < 0:
+		push_warning("[Player] collect_material: Material value is negative (%d), using default 10" % value)
+		value = 10
 	divine_material_value += value
 
 	# Increase corruption based on material value
@@ -244,18 +292,34 @@ func collect_material(material: Node2D) -> void:
 
 	_apply_corruption_effects()
 	material_collected.emit(material)
-	GameManager.record_material_collected(value)
+
+	if GameManager:
+		GameManager.record_material_collected(value)
+	else:
+		push_error("[Player] collect_material: GameManager not available")
 
 func _apply_corruption_effects() -> void:
 	# Visual corruption - subtle tint toward divine color
 	var corruption_color := Color(0.5, 1.0, 1.0, 1.0)  # Cyan tint
 	var base_color := Color.WHITE
-	body.modulate = base_color.lerp(corruption_color, corruption_level * 0.5)
+
+	if body:
+		body.modulate = base_color.lerp(corruption_color, corruption_level * 0.5)
+	else:
+		push_warning("[Player] _apply_corruption_effects: Body node not available")
 
 	# Corruption affects stats (applies to upgraded base values)
 	# Higher corruption = slower movement but stronger attacks
 	move_speed = base_move_speed * (1.0 - corruption_level * 0.2)  # Up to 20% slower
 	attack_damage = base_attack_damage * (1.0 + corruption_level * 0.5)  # Up to 50% stronger
+
+	# Validate computed values
+	if move_speed <= 0:
+		push_warning("[Player] _apply_corruption_effects: move_speed became non-positive (%.2f), clamping to 1.0" % move_speed)
+		move_speed = 1.0
+	if attack_damage <= 0:
+		push_warning("[Player] _apply_corruption_effects: attack_damage became non-positive (%.2f), clamping to 1.0" % attack_damage)
+		attack_damage = 1.0
 
 func get_corruption_level() -> float:
 	return corruption_level

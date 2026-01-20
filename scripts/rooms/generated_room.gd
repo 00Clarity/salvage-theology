@@ -50,21 +50,21 @@ func _generate_visuals() -> void:
 	_add_room_decorations()
 
 func _create_wall(from: Vector2, to: Vector2, direction: RoomData.DoorDirection) -> void:
-	var has_door := direction in room_data.doors
+	var has_door = direction in room_data.doors
 
 	if has_door:
 		# Create wall with gap for door
-		var door_size := TILE_SIZE * 2
-		var is_horizontal := direction in [RoomData.DoorDirection.NORTH, RoomData.DoorDirection.SOUTH]
+		var door_size = TILE_SIZE * 2
+		var is_horizontal = direction in [RoomData.DoorDirection.NORTH, RoomData.DoorDirection.SOUTH]
 
 		if is_horizontal:
-			var mid := (from.x + to.x) / 2.0
+			var mid = (from.x + to.x) / 2.0
 			# Left segment
 			_create_wall_segment(from, Vector2(mid - door_size, to.y))
 			# Right segment
 			_create_wall_segment(Vector2(mid + door_size, from.y), to)
 		else:
-			var mid := (from.y + to.y) / 2.0
+			var mid = (from.y + to.y) / 2.0
 			# Top segment
 			_create_wall_segment(from, Vector2(to.x, mid - door_size))
 			# Bottom segment
@@ -85,12 +85,12 @@ func _create_wall_segment(from: Vector2, to: Vector2) -> void:
 
 	# Accent line on inner edge
 	var accent := Line2D.new()
-	var is_horizontal := abs(to.y - from.y) < abs(to.x - from.x)
+	var is_horizontal = abs(to.y - from.y) < abs(to.x - from.x)
 	if is_horizontal:
-		var y_inner := to.y if from.y < 0 else from.y
+		var y_inner = to.y if from.y < 0 else from.y
 		accent.points = PackedVector2Array([Vector2(from.x, y_inner), Vector2(to.x, y_inner)])
 	else:
-		var x_inner := to.x if from.x < 0 else from.x
+		var x_inner = to.x if from.x < 0 else from.x
 		accent.points = PackedVector2Array([Vector2(x_inner, from.y), Vector2(x_inner, to.y)])
 	accent.width = 2.0
 	accent.default_color = ACCENT_COLOR
@@ -133,8 +133,8 @@ func _create_collision() -> void:
 		_create_wall_collision(direction, half_w, half_h)
 
 func _create_wall_collision(direction: RoomData.DoorDirection, half_w: float, half_h: float) -> void:
-	var has_door := direction in room_data.doors
-	var door_size := TILE_SIZE * 2.0
+	var has_door = direction in room_data.doors
+	var door_size = TILE_SIZE * 2.0
 
 	match direction:
 		RoomData.DoorDirection.NORTH:

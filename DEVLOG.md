@@ -101,6 +101,39 @@ Track what's built, decisions made, and what remains. Update after each session.
 **Next:**
 - Begin Phase 4: Calyx Theology (door payments)
 
+### Session 4: 2026-01-20
+
+**Completed:**
+- [x] Rebuilt Phase 3 room system from scratch
+- [x] Rewrote RoomData with proper room types from GODS.md:
+  - PASSAGE (simple connector, 1-2 enemies)
+  - CHAMBER (larger room, 3-5 enemies)
+  - VAULT (treasure room, guarded)
+  - SANCTUM (theology puzzle room)
+  - HAZARD (environmental danger)
+  - REST (safe zone, oxygen cache)
+- [x] Implemented depth zone distribution (Entry 1-2, Outer 3-5, Inner 6-8, Core 9+)
+- [x] Created comprehensive Calyx-themed room renderer:
+  - Calyx color palette (cyan #00ffff, teal #40e0d0, dark #0a2020)
+  - Glowing door frames with point lights
+  - Floor grid pattern
+  - Room-type-specific decorations (altar for SANCTUM, warning for HAZARD, etc.)
+  - Proper z-index management
+- [x] Fixed room transitions to properly teleport player to entry door
+- [x] Simplified DungeonGenerator to show only current room (no overlap)
+
+**Decisions:**
+- Rooms centered at origin, only current room visible (simpler than grid positioning)
+- Each room type has distinct visual marker for player recognition
+- Door detection uses Area2D with player group check
+- Ambient lighting added to each room for Calyx glow effect
+
+**Issues:**
+- None
+
+**Next:**
+- Begin Phase 4: Calyx Theology (door payments)
+
 ---
 
 ## Phase Tracker

@@ -113,17 +113,21 @@ func perform_attack() -> void:
 		return
 
 	var enemies := tree.get_nodes_in_group("echo")
-	for enemy in enemies:
-		if not is_instance_valid(enemy):
+	for enemy_node in enemies:
+		if not is_instance_valid(enemy_node):
 			continue
+		if not enemy_node is Node2D:
+			continue
+		var enemy: Node2D = enemy_node as Node2D
 		if not enemy.has_method("take_damage"):
 			push_warning("[Player] perform_attack: Enemy %s missing take_damage method" % enemy.name)
 			continue
 
-		var distance: float = global_position.distance_to(enemy.global_position)
+		var enemy_pos: Vector2 = enemy.global_position
+		var distance: float = global_position.distance_to(enemy_pos)
 		if distance < attack_range:
 			# Check if enemy is in front of player
-			var to_enemy: Vector2 = (enemy.global_position - global_position).normalized()
+			var to_enemy: Vector2 = (enemy_pos - global_position).normalized()
 			var dot: float = facing_direction.dot(to_enemy)
 			if dot > 0.3:  # Roughly 70 degree cone
 				enemy.take_damage(attack_damage)

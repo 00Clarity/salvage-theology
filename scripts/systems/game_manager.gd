@@ -138,14 +138,16 @@ func apply_upgrades_to_player(p: CharacterBody2D) -> void:
 	p.health = p.max_health
 
 	var attack_level: int = get_upgrade_level("attack_power")
-	p.attack_damage = 20.0 * (1.0 + attack_level * 0.1)
+	p.base_attack_damage = 20.0 * (1.0 + attack_level * 0.1)
+	p.attack_damage = p.base_attack_damage
 
 	var speed_level: int = get_upgrade_level("move_speed")
-	p.move_speed = 200.0 * (1.0 + speed_level * 0.1)
+	p.base_move_speed = 200.0 * (1.0 + speed_level * 0.1)
+	p.move_speed = p.base_move_speed
 
-	# Corruption resistance
+	# Corruption resistance (caps at 75% reduction at level 5)
 	var corruption_resist_level: int = get_upgrade_level("corruption_resist")
-	p.corruption_rate = 0.002 * (1.0 - corruption_resist_level * 0.2)  # 20% reduction per level
+	p.corruption_rate = 0.002 * maxf(0.25, 1.0 - corruption_resist_level * 0.15)  # 15% reduction per level, max 75%
 
 	# Starting items
 	var item_level: int = get_upgrade_level("starting_items")

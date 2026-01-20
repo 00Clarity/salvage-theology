@@ -1,13 +1,17 @@
 extends Node2D
 
-# Calyx color palette from FOUNDATION.md
+# Calyx color palette from FOUNDATION.md - enhanced
 const CALYX_CYAN := Color("#00ffff")
+const CALYX_CYAN_BRIGHT := Color("#80ffff")
 const CALYX_TEAL := Color("#40e0d0")
 const CALYX_DARK := Color("#0a2020")
-const CALYX_FLOOR := Color("#061414")
+const CALYX_FLOOR := Color("#040e0e")
+const CALYX_FLOOR_LINE := Color("#0a1818")
 const CALYX_WALL := Color("#0a2a2a")
-const CALYX_ACCENT := Color("#00ffff", 0.6)
-const CALYX_GLOW := Color("#00ffff", 0.3)
+const CALYX_WALL_EDGE := Color("#0d3535")
+const CALYX_ACCENT := Color("#00ffff", 0.7)
+const CALYX_GLOW := Color("#00ffff", 0.4)
+const CALYX_PULSE := Color("#00ffff", 0.15)
 
 const TILE_SIZE := 32
 
@@ -79,7 +83,24 @@ func _create_floor_grid(half_w: float, half_h: float, inset: float) -> void:
 	var grid_container := Node2D.new()
 	grid_container.z_index = -9
 
-	# Vertical lines
+	# Dense scanline effect - horizontal lines
+	var y := -half_h + inset
+	var line_idx := 0
+	while y < half_h - inset:
+		var line := Line2D.new()
+		line.points = PackedVector2Array([
+			Vector2(-half_w + inset, y),
+			Vector2(half_w - inset, y)
+		])
+		line.width = 1.0
+		# Alternate line opacity for depth effect
+		var alpha := 0.03 if line_idx % 2 == 0 else 0.06
+		line.default_color = Color(CALYX_TEAL, alpha)
+		grid_container.add_child(line)
+		y += TILE_SIZE / 2.0
+		line_idx += 1
+
+	# Main grid - vertical
 	var x := -half_w + inset + TILE_SIZE
 	while x < half_w - inset:
 		var line := Line2D.new()
@@ -88,22 +109,35 @@ func _create_floor_grid(half_w: float, half_h: float, inset: float) -> void:
 			Vector2(x, half_h - inset)
 		])
 		line.width = 1.0
-		line.default_color = Color(CALYX_TEAL, 0.08)
+		line.default_color = Color(CALYX_TEAL, 0.1)
 		grid_container.add_child(line)
 		x += TILE_SIZE * 2
 
-	# Horizontal lines
-	var y := -half_h + inset + TILE_SIZE
+	# Main grid - horizontal (brighter)
+	y = -half_h + inset + TILE_SIZE
 	while y < half_h - inset:
 		var line := Line2D.new()
 		line.points = PackedVector2Array([
 			Vector2(-half_w + inset, y),
 			Vector2(half_w - inset, y)
 		])
-		line.width = 1.0
-		line.default_color = Color(CALYX_TEAL, 0.08)
+		line.width = 1.5
+		line.default_color = Color(CALYX_TEAL, 0.12)
 		grid_container.add_child(line)
 		y += TILE_SIZE * 2
+
+	# Center crosshairs
+	var center_v := Line2D.new()
+	center_v.points = PackedVector2Array([Vector2(0, -half_h + inset), Vector2(0, half_h - inset)])
+	center_v.width = 2.0
+	center_v.default_color = Color(CALYX_CYAN, 0.08)
+	grid_container.add_child(center_v)
+
+	var center_h := Line2D.new()
+	center_h.points = PackedVector2Array([Vector2(-half_w + inset, 0), Vector2(half_w - inset, 0)])
+	center_h.width = 2.0
+	center_h.default_color = Color(CALYX_CYAN, 0.08)
+	grid_container.add_child(center_h)
 
 	add_child(grid_container)
 
@@ -164,6 +198,7 @@ func _create_wall_section(from: Vector2, to: Vector2, direction: RoomData.DoorDi
 		_create_wall_polygon(from, to)
 
 func _create_wall_polygon(from: Vector2, to: Vector2) -> void:
+	# Wall base
 	var wall := Polygon2D.new()
 	wall.polygon = PackedVector2Array([
 		from,
@@ -175,26 +210,57 @@ func _create_wall_polygon(from: Vector2, to: Vector2) -> void:
 	wall.z_index = -5
 	add_child(wall)
 
-	# Inner edge glow line
+	# Wall edge highlight
 	var is_horizontal := abs(to.y - from.y) < abs(to.x - from.x)
-	var accent := Line2D.new()
+	var edge := Polygon2D.new()
+	var edge_size := 3.0
 
 	if is_horizontal:
 		var y_inner := to.y if from.y < 0 else from.y
-		accent.points = PackedVector2Array([
+		var y_outer := from.y if from.y < 0 else to.y
+		edge.polygon = PackedVector2Array([
 			Vector2(from.x, y_inner),
-			Vector2(to.x, y_inner)
+			Vector2(to.x, y_inner),
+			Vector2(to.x, y_inner + (edge_size if from.y < 0 else -edge_size)),
+			Vector2(from.x, y_inner + (edge_size if from.y < 0 else -edge_size))
 		])
 	else:
 		var x_inner := to.x if from.x < 0 else from.x
-		accent.points = PackedVector2Array([
+		edge.polygon = PackedVector2Array([
 			Vector2(x_inner, from.y),
-			Vector2(x_inner, to.y)
+			Vector2(x_inner, to.y),
+			Vector2(x_inner + (edge_size if from.x < 0 else -edge_size), to.y),
+			Vector2(x_inner + (edge_size if from.x < 0 else -edge_size), from.y)
 		])
 
+	edge.color = CALYX_WALL_EDGE
+	edge.z_index = -4
+	add_child(edge)
+
+	# Glowing accent line (outer glow)
+	var glow := Line2D.new()
+	if is_horizontal:
+		var y_inner := to.y if from.y < 0 else from.y
+		glow.points = PackedVector2Array([Vector2(from.x, y_inner), Vector2(to.x, y_inner)])
+	else:
+		var x_inner := to.x if from.x < 0 else from.x
+		glow.points = PackedVector2Array([Vector2(x_inner, from.y), Vector2(x_inner, to.y)])
+	glow.width = 6.0
+	glow.default_color = Color(CALYX_CYAN, 0.15)
+	glow.z_index = -3
+	add_child(glow)
+
+	# Sharp accent line (inner core)
+	var accent := Line2D.new()
+	if is_horizontal:
+		var y_inner := to.y if from.y < 0 else from.y
+		accent.points = PackedVector2Array([Vector2(from.x, y_inner), Vector2(to.x, y_inner)])
+	else:
+		var x_inner := to.x if from.x < 0 else from.x
+		accent.points = PackedVector2Array([Vector2(x_inner, from.y), Vector2(x_inner, to.y)])
 	accent.width = 2.0
 	accent.default_color = CALYX_ACCENT
-	accent.z_index = -4
+	accent.z_index = -2
 	add_child(accent)
 
 func _create_corner_accents(half_w: float, half_h: float) -> void:
@@ -211,33 +277,67 @@ func _create_corner_accents(half_w: float, half_h: float) -> void:
 		_create_corner_accent(pos, corner_idx)
 
 func _create_corner_accent(pos: Vector2, corner: int) -> void:
+	var size := 16.0
+
+	# Outer glow shape
+	var glow := Polygon2D.new()
+	var glow_size := size + 4
+
+	# Inner accent shape
 	var accent := Polygon2D.new()
-	var size := 12.0
+
+	# Corner light
+	var light := PointLight2D.new()
+	light.position = pos
+	light.color = CALYX_CYAN
+	light.energy = 0.3
+	_setup_point_light(light, 0.4)
+	add_child(light)
 
 	match corner:
-		0:  # Top-left - L shape pointing into room
+		0:  # Top-left
+			glow.polygon = PackedVector2Array([
+				pos, pos + Vector2(glow_size, 0), pos + Vector2(glow_size, 4),
+				pos + Vector2(4, 4), pos + Vector2(4, glow_size), pos + Vector2(0, glow_size)
+			])
 			accent.polygon = PackedVector2Array([
-				pos, pos + Vector2(size, 0), pos + Vector2(size, 3),
-				pos + Vector2(3, 3), pos + Vector2(3, size), pos + Vector2(0, size)
+				pos, pos + Vector2(size, 0), pos + Vector2(size, 2),
+				pos + Vector2(2, 2), pos + Vector2(2, size), pos + Vector2(0, size)
 			])
 		1:  # Top-right
+			glow.polygon = PackedVector2Array([
+				pos, pos + Vector2(0, glow_size), pos + Vector2(-4, glow_size),
+				pos + Vector2(-4, 4), pos + Vector2(-glow_size, 4), pos + Vector2(-glow_size, 0)
+			])
 			accent.polygon = PackedVector2Array([
-				pos, pos + Vector2(0, size), pos + Vector2(-3, size),
-				pos + Vector2(-3, 3), pos + Vector2(-size, 3), pos + Vector2(-size, 0)
+				pos, pos + Vector2(0, size), pos + Vector2(-2, size),
+				pos + Vector2(-2, 2), pos + Vector2(-size, 2), pos + Vector2(-size, 0)
 			])
 		2:  # Bottom-right
+			glow.polygon = PackedVector2Array([
+				pos, pos + Vector2(-glow_size, 0), pos + Vector2(-glow_size, -4),
+				pos + Vector2(-4, -4), pos + Vector2(-4, -glow_size), pos + Vector2(0, -glow_size)
+			])
 			accent.polygon = PackedVector2Array([
-				pos, pos + Vector2(-size, 0), pos + Vector2(-size, -3),
-				pos + Vector2(-3, -3), pos + Vector2(-3, -size), pos + Vector2(0, -size)
+				pos, pos + Vector2(-size, 0), pos + Vector2(-size, -2),
+				pos + Vector2(-2, -2), pos + Vector2(-2, -size), pos + Vector2(0, -size)
 			])
 		3:  # Bottom-left
+			glow.polygon = PackedVector2Array([
+				pos, pos + Vector2(0, -glow_size), pos + Vector2(4, -glow_size),
+				pos + Vector2(4, -4), pos + Vector2(glow_size, -4), pos + Vector2(glow_size, 0)
+			])
 			accent.polygon = PackedVector2Array([
-				pos, pos + Vector2(0, -size), pos + Vector2(3, -size),
-				pos + Vector2(3, -3), pos + Vector2(size, -3), pos + Vector2(size, 0)
+				pos, pos + Vector2(0, -size), pos + Vector2(2, -size),
+				pos + Vector2(2, -2), pos + Vector2(size, -2), pos + Vector2(size, 0)
 			])
 
+	glow.color = Color(CALYX_CYAN, 0.15)
+	glow.z_index = -3
+	add_child(glow)
+
 	accent.color = CALYX_GLOW
-	accent.z_index = -3
+	accent.z_index = -2
 	add_child(accent)
 
 func _create_doors() -> void:
@@ -562,12 +662,25 @@ func _add_passage_decoration() -> void:
 		add_child(marker)
 
 func _add_ambient_light() -> void:
-	# Soft ambient light for the room
+	# Main ambient light - center
 	var ambient := PointLight2D.new()
 	ambient.color = CALYX_TEAL
-	ambient.energy = 0.3
-	_setup_point_light(ambient, 2.5)
+	ambient.energy = 0.4
+	_setup_point_light(ambient, 3.0)
 	add_child(ambient)
+
+	# Secondary ambient - slightly offset for depth
+	var ambient2 := PointLight2D.new()
+	ambient2.position = Vector2(room_data.width * 4, room_data.height * 4)
+	ambient2.color = CALYX_CYAN
+	ambient2.energy = 0.2
+	_setup_point_light(ambient2, 2.0)
+	add_child(ambient2)
+
+	# Edge vignette effect - darker corners
+	var vignette := CanvasModulate.new()
+	vignette.color = Color(0.9, 0.95, 1.0, 1.0)  # Slight blue tint
+	add_child(vignette)
 
 func _setup_point_light(light: PointLight2D, scale: float) -> void:
 	light.texture_scale = scale

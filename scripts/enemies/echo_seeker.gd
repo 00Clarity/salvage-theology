@@ -33,6 +33,19 @@ func _setup_visuals() -> void:
 	_create_collision()
 
 func _create_body() -> void:
+	# Outer glow layer
+	var glow := Polygon2D.new()
+	glow.name = "BodyGlow"
+	glow.polygon = PackedVector2Array([
+		Vector2(0, -24),
+		Vector2(-18, 20),
+		Vector2(18, 20)
+	])
+	glow.color = Color(CALYX_CYAN, 0.15)
+	glow.z_index = 0
+	add_child(glow)
+
+	# Main body
 	body = Polygon2D.new()
 	body.name = "Body"
 	body.polygon = PackedVector2Array([
@@ -44,7 +57,7 @@ func _create_body() -> void:
 	body.z_index = 1
 	add_child(body)
 
-	# Inner triangle
+	# Inner dark triangle
 	var inner := Polygon2D.new()
 	inner.name = "Inner"
 	inner.polygon = PackedVector2Array([
@@ -52,20 +65,50 @@ func _create_body() -> void:
 		Vector2(-8, 10),
 		Vector2(8, 10)
 	])
-	inner.color = Color(0, 0.3, 0.3)
+	inner.color = Color(0.02, 0.15, 0.18)
 	body.add_child(inner)
 
-	# Edge lines
+	# Core triangle (bright)
+	var core := Polygon2D.new()
+	core.name = "Core"
+	core.polygon = PackedVector2Array([
+		Vector2(0, -6),
+		Vector2(-4, 6),
+		Vector2(4, 6)
+	])
+	core.color = Color(CALYX_TEAL, 0.6)
+	body.add_child(core)
+
+	# Edge glow
+	var edge_glow := Line2D.new()
+	edge_glow.points = PackedVector2Array([
+		Vector2(0, -20), Vector2(-14, 16), Vector2(14, 16), Vector2(0, -20)
+	])
+	edge_glow.width = 6.0
+	edge_glow.default_color = Color(CALYX_CYAN, 0.3)
+	body.add_child(edge_glow)
+
+	# Edge lines (sharp)
 	var edge := Line2D.new()
 	edge.points = PackedVector2Array([
-		Vector2(0, -20),
-		Vector2(-14, 16),
-		Vector2(14, 16),
-		Vector2(0, -20)
+		Vector2(0, -20), Vector2(-14, 16), Vector2(14, 16), Vector2(0, -20)
 	])
 	edge.width = 2.0
 	edge.default_color = CALYX_CYAN
 	body.add_child(edge)
+
+	# Accent lines on edges
+	var accent_l := Line2D.new()
+	accent_l.points = PackedVector2Array([Vector2(-7, -2), Vector2(-11, 12)])
+	accent_l.width = 1.5
+	accent_l.default_color = Color(1, 1, 1, 0.4)
+	body.add_child(accent_l)
+
+	var accent_r := Line2D.new()
+	accent_r.points = PackedVector2Array([Vector2(7, -2), Vector2(11, 12)])
+	accent_r.width = 1.5
+	accent_r.default_color = Color(1, 1, 1, 0.4)
+	body.add_child(accent_r)
 
 func _create_eye() -> void:
 	eye = Polygon2D.new()

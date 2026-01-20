@@ -34,6 +34,10 @@ var divine_material_value: int = 0
 var corruption_level: float = 0.0
 var corruption_rate: float = 0.002  # 0.2% corruption per value point (can be modified by upgrades)
 
+# Base stats (after upgrades, before corruption effects)
+var base_move_speed: float = 200.0
+var base_attack_damage: float = 20.0
+
 @onready var body: Node2D = $Body
 
 # Attack visual
@@ -248,10 +252,10 @@ func _apply_corruption_effects() -> void:
 	var base_color := Color.WHITE
 	body.modulate = base_color.lerp(corruption_color, corruption_level * 0.5)
 
-	# Corruption affects stats
+	# Corruption affects stats (applies to upgraded base values)
 	# Higher corruption = slower movement but stronger attacks
-	move_speed = 200.0 * (1.0 - corruption_level * 0.2)  # Up to 20% slower
-	attack_damage = 20.0 * (1.0 + corruption_level * 0.5)  # Up to 50% stronger
+	move_speed = base_move_speed * (1.0 - corruption_level * 0.2)  # Up to 20% slower
+	attack_damage = base_attack_damage * (1.0 + corruption_level * 0.5)  # Up to 50% stronger
 
 func get_corruption_level() -> float:
 	return corruption_level
@@ -270,6 +274,8 @@ func reset() -> void:
 	divine_material_value = 0
 	corruption_level = 0.0
 	corruption_rate = 0.002
+	base_move_speed = 200.0
+	base_attack_damage = 20.0
 	move_speed = 200.0
 	attack_damage = 20.0
 	body.modulate = Color.WHITE

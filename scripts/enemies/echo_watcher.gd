@@ -29,18 +29,31 @@ func _create_ring() -> void:
 	ring = Line2D.new()
 	ring.name = "Ring"
 
+	# Outer glow ring
+	var glow_ring := Line2D.new()
+	glow_ring.name = "GlowRing"
+	var glow_points := PackedVector2Array()
+	for i in range(33):
+		var angle := i * TAU / 32
+		glow_points.append(Vector2(cos(angle), sin(angle)) * 28)
+	glow_ring.points = glow_points
+	glow_ring.width = 8.0
+	glow_ring.default_color = Color(CALYX_CYAN, 0.15)
+	glow_ring.z_index = 0
+	add_child(glow_ring)
+
+	# Main ring with segments
 	var points := PackedVector2Array()
 	for i in range(33):
 		var angle := i * TAU / 32
 		points.append(Vector2(cos(angle), sin(angle)) * 24)
-
 	ring.points = points
 	ring.width = 3.0
 	ring.default_color = CALYX_CYAN
 	ring.z_index = 1
 	add_child(ring)
 
-	# Inner ring
+	# Inner ring - pulsing
 	var inner_ring := Line2D.new()
 	inner_ring.name = "InnerRing"
 	var inner_points := PackedVector2Array()
@@ -48,26 +61,69 @@ func _create_ring() -> void:
 		var angle := i * TAU / 32
 		inner_points.append(Vector2(cos(angle), sin(angle)) * 20)
 	inner_ring.points = inner_points
-	inner_ring.width = 1.5
-	inner_ring.default_color = Color(CALYX_TEAL, 0.5)
+	inner_ring.width = 2.0
+	inner_ring.default_color = Color(CALYX_TEAL, 0.6)
 	ring.add_child(inner_ring)
+
+	# Segment markers (4 cardinal points)
+	for i in range(4):
+		var angle := i * TAU / 4
+		var marker := Polygon2D.new()
+		var pos := Vector2(cos(angle), sin(angle)) * 24
+		marker.polygon = PackedVector2Array([
+			pos + Vector2(-3, -3), pos + Vector2(3, -3),
+			pos + Vector2(3, 3), pos + Vector2(-3, 3)
+		])
+		marker.color = Color(CALYX_CYAN, 0.8)
+		ring.add_child(marker)
 
 func _create_eye() -> void:
 	eye = Node2D.new()
 	eye.name = "Eye"
 	add_child(eye)
 
-	# Eye white
+	# Eye glow backdrop
+	var eye_glow := Polygon2D.new()
+	var glow_points := PackedVector2Array()
+	for i in range(16):
+		var angle := i * TAU / 16
+		glow_points.append(Vector2(cos(angle), sin(angle)) * 14)
+	eye_glow.polygon = glow_points
+	eye_glow.color = Color(CALYX_CYAN, 0.3)
+	eye.add_child(eye_glow)
+
+	# Eye white - with subtle gradient effect
 	var eye_white := Polygon2D.new()
 	var white_points := PackedVector2Array()
 	for i in range(16):
 		var angle := i * TAU / 16
 		white_points.append(Vector2(cos(angle), sin(angle)) * 10)
 	eye_white.polygon = white_points
-	eye_white.color = Color.WHITE
+	eye_white.color = Color(0.95, 1.0, 1.0)
 	eye.add_child(eye_white)
 
-	# Pupil
+	# Iris outer ring - glowing
+	var iris_outer := Polygon2D.new()
+	var iris_outer_points := PackedVector2Array()
+	for i in range(16):
+		var angle := i * TAU / 16
+		iris_outer_points.append(Vector2(cos(angle), sin(angle)) * 7)
+	iris_outer.polygon = iris_outer_points
+	iris_outer.color = Color(CALYX_TEAL, 0.8)
+	eye.add_child(iris_outer)
+
+	# Iris ring line
+	var iris := Line2D.new()
+	var iris_points := PackedVector2Array()
+	for i in range(17):
+		var angle := i * TAU / 16
+		iris_points.append(Vector2(cos(angle), sin(angle)) * 6)
+	iris.points = iris_points
+	iris.width = 2.0
+	iris.default_color = CALYX_CYAN
+	eye.add_child(iris)
+
+	# Pupil - darker with depth
 	pupil = Polygon2D.new()
 	pupil.name = "Pupil"
 	var pupil_points := PackedVector2Array()
@@ -75,19 +131,17 @@ func _create_eye() -> void:
 		var angle := i * TAU / 12
 		pupil_points.append(Vector2(cos(angle), sin(angle)) * 4)
 	pupil.polygon = pupil_points
-	pupil.color = Color.BLACK
+	pupil.color = Color(0.02, 0.05, 0.08)
 	eye.add_child(pupil)
 
-	# Iris ring
-	var iris := Line2D.new()
-	var iris_points := PackedVector2Array()
-	for i in range(13):
-		var angle := i * TAU / 12
-		iris_points.append(Vector2(cos(angle), sin(angle)) * 6)
-	iris.points = iris_points
-	iris.width = 1.5
-	iris.default_color = CALYX_CYAN
-	eye.add_child(iris)
+	# Pupil highlight - tiny white dot
+	var highlight := Polygon2D.new()
+	highlight.polygon = PackedVector2Array([
+		Vector2(-1.5, -2), Vector2(0.5, -2),
+		Vector2(0.5, 0), Vector2(-1.5, 0)
+	])
+	highlight.color = Color(1, 1, 1, 0.8)
+	pupil.add_child(highlight)
 
 func _create_glow() -> void:
 	glow_light = PointLight2D.new()

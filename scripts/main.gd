@@ -21,7 +21,7 @@ func _on_room_entered(room_data: RoomData) -> void:
 	hud.update_depth(room_data.depth)
 
 	# Connect door signals for current room
-	var room_instance := dungeon_generator.get_room_instance(room_data.grid_position)
+	var room_instance = dungeon_generator.get_room_instance(room_data.grid_position)
 	if room_instance and room_instance != current_room_instance:
 		if current_room_instance and current_room_instance.door_entered.is_connected(_on_door_entered):
 			current_room_instance.door_entered.disconnect(_on_door_entered)
@@ -33,7 +33,7 @@ func _on_door_entered(direction: RoomData.DoorDirection) -> void:
 	if not dungeon_generator.has_adjacent_room(direction):
 		return
 
-	var next_pos := dungeon_generator.get_adjacent_room_position(direction)
+	var next_pos = dungeon_generator.get_adjacent_room_position(direction)
 	dungeon_generator.enter_room(next_pos)
 	_teleport_player_to_door(RoomData.opposite_direction(direction))
 
@@ -41,13 +41,13 @@ func _position_player_in_room() -> void:
 	player.global_position = Vector2.ZERO
 
 func _teleport_player_to_door(from_direction: RoomData.DoorDirection) -> void:
-	var room_data := dungeon_generator.get_current_room()
+	var room_data = dungeon_generator.get_current_room()
 	if not room_data:
 		return
 
-	var door_pos := room_data.get_door_position(from_direction)
+	var door_pos = room_data.get_door_position(from_direction)
 	# Offset player slightly into the room
-	var offset := RoomData.direction_to_vector(RoomData.opposite_direction(from_direction))
+	var offset = RoomData.direction_to_vector(RoomData.opposite_direction(from_direction))
 	player.global_position = door_pos + Vector2(offset) * 48.0
 
 func _on_resource_depleted(resource_name: String) -> void:
